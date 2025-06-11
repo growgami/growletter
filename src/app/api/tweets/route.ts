@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import type { Prisma } from '@prisma/client'
+import { getCategoryByClientId } from '@/components/clients/client-list/clients'
 
 export async function GET(request: Request) {
   try {
@@ -8,13 +9,29 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '15', 10);
     const cursor = searchParams.get('cursor'); // Tweet ID for cursor-based pagination
     const tag = searchParams.get('tag');
+    const clientId = searchParams.get('client'); // New client parameter
     const offset = parseInt(searchParams.get('offset') || '0', 10); // Keep for backward compatibility
 
-    console.log('📊 API Request:', { limit, cursor, offset, hasCursor: !!cursor, tag });
+    console.log('📊 API Request:', { limit, cursor, offset, hasCursor: !!cursor, tag, clientId });
 
     let tweets;
     const whereClause: Prisma.TweetWhereInput = {};
 
+    // Handle client-based filtering
+    if (clientId) {
+      const clientIdNum = parseInt(clientId, 10);
+      const clientCategory = getCategoryByClientId(clientIdNum);
+      
+      if (clientCategory) {
+        // Filter by exact category match
+        whereClause.category = clientCategory;
+        console.log('🏷️ Filtering by client category:', clientCategory);
+      } else {
+        console.log('⚠️ Unknown client ID:', clientId);
+      }
+    }
+
+    // Handle tag-based filtering (existing functionality)
     if (tag) {
       // Use case-insensitive matching for tag to avoid case sensitivity issues
       whereClause.tag = {
@@ -80,6 +97,7 @@ export async function GET(request: Request) {
         method: cursor && cursor !== 'null' ? 'cursor' : 'offset',
         cursor,
         tag,
+        clientId,
         offset,
         limit,
         returned: formattedTweets.length
@@ -91,6 +109,7 @@ export async function GET(request: Request) {
       hasMore,
       nextCursor,
       tag,
+      clientId,
       method: cursor && cursor !== 'null' ? 'cursor' : 'offset'
     });
 

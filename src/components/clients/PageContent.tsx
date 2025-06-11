@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ClientCards from "@/components/home/ClientCards";
-import Header from "@/components/home/Header";
+import ClientCards from "@/components/clients/ClientCards";
+import Header from "@/components/clients/Header";
 
 export default function PageContent() {
   const [showClientCards, setShowClientCards] = useState(false);

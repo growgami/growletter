@@ -3,17 +3,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getClientById } from "@/components/clients/client-list/clients";
 
 interface NavbarProps {
   activeTab?: "Social Board" | "People";
   onTabChange?: (tab: "Social Board" | "People") => void;
 }
-
-// Ecosystem mapping
-const ecosystemMap: Record<string, string> = {
-  "1": "Polygon Wall",
-  // Add more ecosystems as needed
-};
 
 export default function Navbar({ activeTab = "Social Board", onTabChange }: NavbarProps) {
   const [currentTab, setCurrentTab] = useState<"Social Board" | "People">(activeTab);
@@ -27,8 +22,16 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
     setCurrentTab(activeTab);
   }, [activeTab]);
   
-  // Get ecosystem name or fallback to Growletter
-  const ecosystemName = clientId ? ecosystemMap[clientId] || "Growletter" : "Growletter";
+  // Get client name or fallback to Growletter
+  const getClientName = () => {
+    if (!clientId) return "Growletter";
+    
+    const clientIdNum = parseInt(clientId, 10);
+    const client = getClientById(clientIdNum);
+    return client ? `${client.title} Wall` : "Growletter";
+  };
+
+  const ecosystemName = getClientName();
 
   // Dynamic button text based on active tab
   const wallsButtonText = currentTab === "People" ? "People" : "Walls";

@@ -3,22 +3,17 @@
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { clients  } from "./client-list/clients";
 
-interface Client {
-  id: number;
-  title: string;
-  gradient: string;
-  icon: string;
-}
-
-const clients: Client[] = [
-  {
-    id: 1,
-    title: "Polygon",
-    gradient: "from-gray-900 via-gray-700 to-gray-400",
-    icon: "/assets/logos/polygon.svg"
-  }
-];
+// Helper function to determine grid layout based on client count
+const getGridLayout = (count: number) => {
+  if (count === 1) return "grid-cols-1 max-w-sm";
+  if (count === 2) return "grid-cols-1 sm:grid-cols-2 max-w-2xl";
+  if (count <= 4) return "grid-cols-2 max-w-4xl";
+  if (count <= 6) return "grid-cols-2 sm:grid-cols-3 max-w-6xl";
+  if (count <= 9) return "grid-cols-3 max-w-6xl";
+  return "grid-cols-3 lg:grid-cols-4 max-w-7xl"; // For 10+ clients
+};
 
 // Animation variants
 const containerVariants = {
@@ -72,6 +67,7 @@ const cardVariants = {
 
 export default function ClientCards() {
   const router = useRouter();
+  const gridLayout = getGridLayout(clients.length);
 
   const handleCardClick = (clientId: number) => {
     router.push(`/social-board?client=${clientId}`);
@@ -101,13 +97,13 @@ export default function ClientCards() {
       
       {/* Cards list */}
       <motion.div 
-        className="w-full max-w-2xl mx-auto flex justify-center px-4"
+        className={`w-full mx-auto grid ${gridLayout} gap-4 sm:gap-6 px-4`}
         variants={containerVariants}
       >
         {clients.map((client) => (
           <motion.button
             key={client.id}
-            className="group relative flex flex-col items-center justify-center bg-gray-50 border border-gray-500 p-6 sm:p-8 focus:outline-none transition-all duration-300 min-h-[140px] active:scale-95 w-full max-w-sm"
+            className="group relative flex flex-col items-center justify-center bg-gray-50 border border-gray-500 p-6 sm:p-8 focus:outline-none transition-all duration-300 min-h-[140px] active:scale-95"
             style={{
               boxShadow: '0 4px 16px rgba(0,0,0,0.08)'
             }}
@@ -122,18 +118,18 @@ export default function ClientCards() {
             whileTap={{ scale: 0.98 }}
             onClick={() => handleCardClick(client.id)}
           >
-            {/* Icon without background */}
-              <motion.div
+            {/* Icon */}
+            <motion.div
               className="flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-105 transition-transform"
-              >
-                <Image
+            >
+              <Image
                 src={client.icon}
                 alt={client.title}
                 width={40}
                 height={40}
                 className="w-10 h-10 sm:w-12 sm:h-12"
-                />
-              </motion.div>
+              />
+            </motion.div>
             
             {/* Content */}
             <div className="text-center">
@@ -142,7 +138,7 @@ export default function ClientCards() {
               </h3>
             </div>
               
-            {/* More visible arrow indicator */}
+            {/* Arrow indicator */}
             <div className="absolute top-4 right-4 opacity-40 group-hover:opacity-70 transition-opacity">
               <svg 
                 className="w-5 h-5 text-gray-500" 

@@ -107,7 +107,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     hasMore,
     isFetchingNextPage,
     totalTweets
-  } = useTweets(15, selectedTag === "All" ? undefined : selectedTag);
+  } = useTweets(15, selectedTag === "All" ? undefined : selectedTag, clientId);
 
   // Track previous tweet count to identify new items
   const previousTweetCountRef = useRef(0);

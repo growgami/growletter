@@ -6,7 +6,7 @@ export const tweetsKeys = {
   all: ['tweets'] as const,
   lists: () => [...tweetsKeys.all, 'list'] as const,
   list: (params: FetchTweetsParams) => [...tweetsKeys.lists(), params] as const,
-  infinite: (limit: number) => [...tweetsKeys.all, 'infinite', limit] as const,
+  infinite: (limit: number, clientId?: string | null) => [...tweetsKeys.all, 'infinite', limit, clientId] as const,
 }
 
 // Basic tweets query hook
@@ -19,10 +19,10 @@ export function useTweetsQuery(params: FetchTweetsParams = {}) {
 }
 
 // Infinite tweets query hook for pagination
-export function useInfiniteTweetsQuery(limit = 15) {
+export function useInfiniteTweetsQuery(limit = 15, clientId?: string | null) {
   return useInfiniteQuery({
-    queryKey: tweetsKeys.infinite(limit),
-    queryFn: ({ pageParam }: { pageParam: string | null }) => fetchInfiniteTweets({ pageParam, limit }),
+    queryKey: tweetsKeys.infinite(limit, clientId),
+    queryFn: ({ pageParam }: { pageParam: string | null }) => fetchInfiniteTweets({ pageParam, limit, clientId }),
     initialPageParam: null, // Changed from 0 to null for cursor-based pagination
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -33,7 +33,7 @@ export function useInfiniteTweetsQuery(limit = 15) {
 }
 
 // Enhanced convenience hook with better loading states
-export function useTweets(limit: number, tag?: string) {
+export function useTweets(limit: number, tag?: string, clientId?: string | null) {
   const {
     data,
     error,
@@ -43,8 +43,8 @@ export function useTweets(limit: number, tag?: string) {
     status,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ["tweets", limit, tag],
-    queryFn: ({ pageParam }) => fetchTweets({ limit, cursor: pageParam, tag }),
+    queryKey: ["tweets", limit, tag, clientId],
+    queryFn: ({ pageParam }) => fetchTweets({ limit, cursor: pageParam, tag, clientId }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   });

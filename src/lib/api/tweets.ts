@@ -28,9 +28,10 @@ export interface FetchTweetsParams {
   limit?: number;
   cursor?: string | null;
   tag?: string;
+  clientId?: string | null;
 }
 
-export const fetchTweets = async ({ limit = 15, cursor, tag }: FetchTweetsParams): Promise<TweetsResponse> => {
+export const fetchTweets = async ({ limit = 15, cursor, tag, clientId }: FetchTweetsParams): Promise<TweetsResponse> => {
   const params = new URLSearchParams();
   params.append('limit', String(limit));
 
@@ -40,6 +41,10 @@ export const fetchTweets = async ({ limit = 15, cursor, tag }: FetchTweetsParams
 
   if (tag && tag !== 'All') {
     params.append('tag', tag);
+  }
+
+  if (clientId) {
+    params.append('client', clientId);
   }
 
   const response = await fetch(`/api/tweets?${params.toString()}`);
@@ -56,10 +61,12 @@ export const fetchTweets = async ({ limit = 15, cursor, tag }: FetchTweetsParams
 
 export async function fetchInfiniteTweets({ 
   pageParam = null, 
-  limit = 15 
+  limit = 15,
+  clientId 
 }: { 
   pageParam?: string | null; 
   limit?: number; 
+  clientId?: string | null;
 }): Promise<TweetsResponse> {
-  return fetchTweets({ limit, cursor: pageParam });
+  return fetchTweets({ limit, cursor: pageParam, clientId });
 } 
