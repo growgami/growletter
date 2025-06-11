@@ -10,9 +10,10 @@ export async function GET(request: Request) {
     const cursor = searchParams.get('cursor'); // Tweet ID for cursor-based pagination
     const tag = searchParams.get('tag');
     const clientId = searchParams.get('client'); // New client parameter
+    const searchQuery = searchParams.get('search')?.trim(); // New search parameter
     const offset = parseInt(searchParams.get('offset') || '0', 10); // Keep for backward compatibility
 
-    console.log('📊 API Request:', { limit, cursor, offset, hasCursor: !!cursor, tag, clientId });
+    console.log('📊 API Request:', { limit, cursor, offset, hasCursor: !!cursor, tag, clientId, searchQuery });
 
     let tweets;
     const whereClause: Prisma.TweetWhereInput = {};
@@ -37,6 +38,32 @@ export async function GET(request: Request) {
       whereClause.tag = {
         contains: tag
       };
+    }
+
+    // Handle search query filtering
+    if (searchQuery) {
+      // Add search conditions that work across tweet text, author name, and handle
+      whereClause.OR = [
+        {
+          text: {
+            contains: searchQuery,
+            mode: 'insensitive'
+          }
+        },
+        {
+          authorName: {
+            contains: searchQuery,
+            mode: 'insensitive'
+          }
+        },
+        {
+          author: {
+            contains: searchQuery,
+            mode: 'insensitive'
+          }
+        }
+      ];
+      console.log('🔍 Adding search filter for:', searchQuery);
     }
 
     if (cursor && cursor !== 'null') { // Handle null string from frontend

@@ -33,7 +33,7 @@ export function useInfiniteTweetsQuery(limit = 15, clientId?: string | null) {
 }
 
 // Enhanced convenience hook with better loading states
-export function useTweets(limit: number, tag?: string, clientId?: string | null) {
+export function useTweets(limit: number, tag?: string, clientId?: string | null, search?: string) {
   const {
     data,
     error,
@@ -43,8 +43,8 @@ export function useTweets(limit: number, tag?: string, clientId?: string | null)
     status,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ["tweets", limit, tag, clientId],
-    queryFn: ({ pageParam }) => fetchTweets({ limit, cursor: pageParam, tag, clientId }),
+    queryKey: ["tweets", limit, tag, clientId, search],
+    queryFn: ({ pageParam }) => fetchTweets({ limit, cursor: pageParam, tag, clientId, search }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   });

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import TwitterEmbed from "./TwitterEmbed";
 import FilterTabs from "./FilterTabs";
+import SearchField from "@/components/tweet-board/SearchField";
 import { useTweets } from "@/hooks/query/useTweetsQuery";
 import { useInfiniteScroll } from "@/hooks/layouts/useInfiniteScroll";
 import { useMasonryLayout } from "@/hooks/layouts/useMasonryLayout";
@@ -93,6 +94,7 @@ const TWEET_TAGS = [
 
 export default function TweetBoard({ clientId }: TweetBoardProps) {
   const [selectedTag, setSelectedTag] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const {
     tweets,
@@ -107,7 +109,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     hasMore,
     isFetchingNextPage,
     totalTweets
-  } = useTweets(15, selectedTag === "All" ? undefined : selectedTag, clientId);
+  } = useTweets(15, selectedTag === "All" ? undefined : selectedTag, clientId, searchQuery || undefined);
 
   // Track previous tweet count to identify new items
   const previousTweetCountRef = useRef(0);
@@ -143,6 +145,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
   console.log('📋 ContentCards component rendered with clientId:', clientId);
   console.log('📊 Tweets state:', { 
     selectedTag,
+    searchQuery,
     totalTweets, 
     tweetsLength: tweets.length,
     isLoadingInitial, 
@@ -265,7 +268,14 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           animate={{ opacity: 1 }}
         >
           <div className="text-center py-16">
-            <p className="text-gray-500 text-lg">No tweets found.</p>
+            {searchQuery ? (
+              <div className="space-y-2">
+                <p className="text-gray-500 text-lg">No tweets found for &quot;{searchQuery}&quot;</p>
+                <p className="text-gray-400 text-sm">Try adjusting your search terms or filters</p>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-lg">No tweets found.</p>
+            )}
           </div>
         </motion.div>
       );
@@ -396,12 +406,21 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <p>Total tweets loaded: {totalTweets}</p>
+            <p>
+              {searchQuery ? `Found ${totalTweets} tweets for "${searchQuery}"` : `Total tweets loaded: ${totalTweets}`}
+            </p>
             <p>Distributed across {columnCount} columns</p>
+            {searchQuery && selectedTag !== "All" && (
+              <p>Filtered by tag: {selectedTag}</p>
+            )}
           </motion.div>
         </motion.div>
       </section>
     );
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
   return (
@@ -410,6 +429,12 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
         tags={TWEET_TAGS}
         selectedTag={selectedTag}
         onSelectTag={setSelectedTag}
+      />
+
+      <SearchField
+        onSearch={handleSearch}
+        placeholder="Search tweets, authors, or handles..."
+        isLoading={isLoadingInitial || isLoadingMore}
       />
 
       {/* TWEET BOARD SECTION */}

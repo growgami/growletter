@@ -43,6 +43,8 @@ next-env.d.ts
 
 /docs
 
+package-lock.json
+
 /.cursor
 
 
