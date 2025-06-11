@@ -1,13 +1,72 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuthorsQuery } from "@/hooks/query/usePeopleQuery";
+import { useUpvotesQuery, useUpvoteMutation, useSessionUpvotesQuery, useHasUpvoted } from "@/hooks/query/useUpvotesQuery";
 import { formatUpvotes, type Author } from "@/lib/api/people";
+import { getUpvoteCountByAuthor } from "@/lib/api/upvotes";
+
+// UpvoteButton component with session tracking
+function UpvoteButton({ 
+  author, 
+  onUpvote, 
+  isHovered, 
+  onHover, 
+  onLeave 
+}: {
+  author: Author;
+  onUpvote: (author: Author) => void;
+  isHovered: boolean;
+  onHover: () => void;
+  onLeave: () => void;
+}) {
+  const hasUpvoted = useHasUpvoted(author.authorId);
+  
+  return (
+    <motion.button
+      className={`w-16 h-9 backdrop-blur-sm border text-sm font-medium transition-colors font-body flex items-center justify-center ${
+        hasUpvoted 
+          ? 'bg-gray-200 border-gray-400 text-gray-600 cursor-not-allowed' 
+          : 'bg-white/60 border-gray-500 text-gray-600 hover:text-gray-800'
+      }`}
+      onClick={() => !hasUpvoted && onUpvote(author)}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+      whileHover={hasUpvoted ? {} : { scale: 1.02 }}
+      whileTap={hasUpvoted ? {} : { scale: 0.98 }}
+      disabled={hasUpvoted}
+      title={hasUpvoted ? "Already upvoted this session" : "Click to upvote"}
+    >
+      <span className="truncate">
+        {hasUpvoted 
+          ? "✓" 
+          : isHovered 
+            ? "Upvote" 
+            : formatUpvotes(author.upvotes)
+        }
+      </span>
+    </motion.button>
+  );
+}
 
 export default function AuthorTable() {
   const { data, isLoading, error } = useAuthorsQuery();
+  const { data: upvotesData, isLoading: upvotesLoading } = useUpvotesQuery();
+  const { isLoading: sessionLoading } = useSessionUpvotesQuery();
+  const upvoteMutation = useUpvoteMutation();
   const [hoveredUpvote, setHoveredUpvote] = useState<number | null>(null);
+
+  // Merge authors with real upvote counts
+  const authorsWithUpvotes = useMemo(() => {
+    const baseAuthors = data?.authors || [];
+    if (!upvotesData?.upvotes) return baseAuthors;
+    
+    return baseAuthors.map(author => ({
+      ...author,
+      upvotes: getUpvoteCountByAuthor(upvotesData.upvotes, author.authorId)
+    }));
+  }, [data?.authors, upvotesData?.upvotes]);
 
   if (error) {
     return (
@@ -24,11 +83,12 @@ export default function AuthorTable() {
     );
   }
 
-  const authors = data?.authors || [];
-
   const handleUpvote = (author: Author) => {
-    console.log('Upvote clicked for:', author.name);
-    // Add upvote logic here
+    upvoteMutation.mutate({
+      author_id: author.authorId,
+      author: author.handle,
+      author_name: author.name,
+    });
   };
 
   const handleContact = (author: Author) => {
@@ -69,7 +129,7 @@ export default function AuthorTable() {
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
+                {isLoading || upvotesLoading || sessionLoading ? (
                   // Loading skeleton
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="border-b border-gray-100">
@@ -97,7 +157,7 @@ export default function AuthorTable() {
                     </tr>
                   ))
                 ) : (
-                  authors.map((author: Author, index: number) => (
+                  authorsWithUpvotes.map((author: Author, index: number) => (
                     <motion.tr
                       key={author.id}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -134,18 +194,13 @@ export default function AuthorTable() {
                       <td className="px-6 py-4 text-gray-600 font-body">{author.followers}</td>
                       <td className="px-6 py-4 text-gray-600 font-body">{author.tweets}</td>
                       <td className="px-6 py-4">
-                        <motion.button
-                          className="w-16 h-9 bg-white/60 backdrop-blur-sm border border-gray-500 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors font-body flex items-center justify-center"
-                          onClick={() => handleUpvote(author)}
-                          onMouseEnter={() => setHoveredUpvote(author.id)}
-                          onMouseLeave={() => setHoveredUpvote(null)}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <span className="truncate">
-                            {hoveredUpvote === author.id ? "Upvote" : formatUpvotes(author.upvotes)}
-                          </span>
-                        </motion.button>
+                        <UpvoteButton 
+                          author={author} 
+                          onUpvote={handleUpvote}
+                          isHovered={hoveredUpvote === author.id}
+                          onHover={() => setHoveredUpvote(author.id)}
+                          onLeave={() => setHoveredUpvote(null)}
+                        />
                       </td>
                       <td className="px-6 py-4">
                         <motion.button
@@ -167,7 +222,7 @@ export default function AuthorTable() {
           </div>
         </div>
 
-        {!isLoading && authors.length === 0 && (
+        {!isLoading && !upvotesLoading && !sessionLoading && authorsWithUpvotes.length === 0 && (
           <div className="text-center p-8">
             <p className="text-gray-600 font-body">No authors found</p>
           </div>

@@ -1,5 +1,6 @@
 export interface Author {
   id: number;
+  authorId: string; // Twitter author ID for upvoting
   name: string;
   handle: string;
   pfp: string;

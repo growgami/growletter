@@ -7,7 +7,7 @@ export async function GET() {
 
     // Get aggregated author data with real names and follower counts
     const authorStats = await prisma.tweet.groupBy({
-      by: ['author', 'authorName', 'authorPfp', 'authorFollowers'],
+      by: ['authorId', 'author', 'authorName', 'authorPfp', 'authorFollowers'],
       _count: {
         id: true,
       },
@@ -21,6 +21,7 @@ export async function GET() {
     // Transform the data to match the Author interface exactly
     const authors = authorStats.map((stat, index) => ({
       id: index + 1,
+      authorId: stat.authorId, // Include the actual Twitter author ID
       name: stat.authorName, // Use real author name
       handle: stat.author, // Use author handle (username)
       pfp: stat.authorPfp || '',
@@ -28,7 +29,7 @@ export async function GET() {
       tweets: stat._count.id,
       engagement: `${generateEngagementRate()}%`, // Include percentage sign
       verified: index < 10, // First 10 authors are "verified"
-      upvotes: generateUpvoteCount()
+      upvotes: 0 // Will be populated from upvotes database
     }))
 
     console.log(`📤 Returning ${authors.length} authors`)
@@ -62,8 +63,4 @@ function formatFollowerCount(count: number): string {
 // Helper functions for fields we still need to generate
 function generateEngagementRate(): number {
   return Math.floor(Math.random() * 10) + 1 // 1-10%
-}
-
-function generateUpvoteCount(): number {
-  return Math.floor(Math.random() * 1000) + 50 // 50-1050
 } 
