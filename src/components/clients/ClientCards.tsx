@@ -75,7 +75,7 @@ export default function ClientCards() {
 
   return (
     <motion.div 
-      className="w-full max-w-2xl"
+      className="w-full max-w-3xl"
       variants={containerVariants}
       initial="hidden"
       animate="visible"

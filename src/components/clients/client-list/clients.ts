@@ -8,9 +8,9 @@ export interface Client {
 export const clients: Client[] = [
   {
     id: 1,
-    title: "Arb",
+    title: "Polygon",
     category: "Polygon",
-    icon: "/assets/logos/arb.svg"
+    icon: "/assets/logos/polygon.svg"
   },
   {
     id: 2,
@@ -29,6 +29,18 @@ export const clients: Client[] = [
     title: "Tether",
     category: "tether",
     icon: "/assets/logos/Tether.png"
+  },
+  {
+    id: 5,
+    title: "Arbitrium",
+    category: "arbitrium",
+    icon: "/assets/logos/arb.svg"
+  },
+  {
+    id: 6,
+    title: "Near",
+    category: "near",
+    icon: "/assets/logos/near.svg"
   }
 ];
 

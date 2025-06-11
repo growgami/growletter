@@ -180,7 +180,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
               />
             </div>
           ) : article.embedType === 'twitter' ? (
-            <div className="shadow-[0_0_0.5px_1px_gray] my-2">
+            <div className="shadow-[0_0_0.5px_1px_gray] rounded-xl my-2">
               <TwitterEmbed url={article.embedUrl} />
             </div>
           ) : article.embedType === 'iframe' ? (
@@ -236,73 +236,69 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     );
   };
 
-  // Initial loading state
-  if (isLoadingInitial) {
-    return (
-      <motion.div
-        className="px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <div className="text-center text-gray-600 mt-8">Loading tweets...</div>
-      </motion.div>
-    );
-  }
-
-  // Empty state
-  if (isEmpty) {
-    return (
-      <motion.div
-        className="px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">No tweets found.</p>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Error state
-  if (isError) {
-    return (
-      <motion.div 
-        className="px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <div className="text-center py-8">
-          <div className="text-red-500 mb-4">
-            <svg className="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
+  // Render content based on state
+  const renderTweetContent = () => {
+    // Initial loading state
+    if (isLoadingInitial) {
+      return (
+        <motion.div
+          className="px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="flex justify-center items-center py-16">
+            <div className="flex items-center space-x-3 text-gray-600">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <span className="text-lg">Loading tweets...</span>
+            </div>
           </div>
-          <p className="text-red-600 mb-4">Error: {error}</p>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
+        </motion.div>
+      );
+    }
 
+    // Empty state
+    if (isEmpty) {
+      return (
+        <motion.div
+          className="px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="text-center py-16">
+            <p className="text-gray-500 text-lg">No tweets found.</p>
+          </div>
+        </motion.div>
+      );
+    }
 
+    // Error state
+    if (isError) {
+      return (
+        <motion.div 
+          className="px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="text-center py-8">
+            <div className="text-red-500 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <p className="text-red-600 mb-4">Error: {error}</p>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </motion.div>
+      );
+    }
 
-  return (
-    <>
-    
-    <FilterTabs
-      tags={TWEET_TAGS}
-      selectedTag={selectedTag}
-      onSelectTag={setSelectedTag}
-    />
-
-    {/* TWEET BOARD SECTION */}
-    <div style={{ position: "relative", width: "100%" }}>
+    // Main content with tweets
+    return (
       <section id="tweet-board" className="px-4 w-full">
         <motion.div
           key={selectedTag}
@@ -405,7 +401,21 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           </motion.div>
         </motion.div>
       </section>
-    </div>
+    );
+  };
+
+  return (
+    <>
+      <FilterTabs
+        tags={TWEET_TAGS}
+        selectedTag={selectedTag}
+        onSelectTag={setSelectedTag}
+      />
+
+      {/* TWEET BOARD SECTION */}
+      <div style={{ position: "relative", width: "100%" }}>
+        {renderTweetContent()}
+      </div>
     </>
   );
 }
