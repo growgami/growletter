@@ -22,19 +22,17 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
     setCurrentTab(activeTab);
   }, [activeTab]);
   
-  // Get client name or fallback to Growletter
-  const getClientName = () => {
+  // Get client base name or fallback to Growletter
+  const getClientBaseName = () => {
     if (!clientId) return "Growletter";
     
     const clientIdNum = parseInt(clientId, 10);
     const client = getClientById(clientIdNum);
-    return client ? `${client.title} Wall` : "Growletter";
+    return client ? client.title : "Growletter";
   };
 
-  const ecosystemName = getClientName();
-
-  // Dynamic button text based on active tab
-  const wallsButtonText = currentTab === "People" ? "People" : "Walls";
+  const clientBaseName = getClientBaseName();
+  const ecosystemName = `${clientBaseName} ${currentTab === "People" ? "People" : "Wall"}`;
 
   const handleTabClick = (tab: "Social Board" | "People") => {
     setCurrentTab(tab);
@@ -68,7 +66,7 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {wallsButtonText}
+                Wall
               </motion.button>
 
               {/* Navigation Tabs - Desktop */}
@@ -173,7 +171,7 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
                     onClick={handleClientsClick}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {wallsButtonText}
+                    Wall
                   </motion.button>
 
                   {/* Navigation Tabs */}

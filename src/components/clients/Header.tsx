@@ -12,11 +12,12 @@ interface HeaderProps {
 }
 
 export default function Header({ skipAnimation = false }: HeaderProps) {
-  // Check if animation has already been played in this session
-  const hasPlayedAnimation = typeof window !== 'undefined' && sessionStorage.getItem('headerAnimationPlayed') === 'true';
-  const shouldSkipAnimation = skipAnimation || hasPlayedAnimation;
-  
-  const [animationComplete, setAnimationComplete] = useState(shouldSkipAnimation);
+  // Local state to track whether the intro animation has finished
+  // Initialise based purely on the incoming prop so that the first
+  // render on the client is guaranteed to match the HTML produced on
+  // the server. Any client-side checks that rely on `window` (e.g.
+  // `sessionStorage`) should only run in an effect after hydration.
+  const [animationComplete, setAnimationComplete] = useState(skipAnimation);
   const headerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const welcomeLineRef = useRef<HTMLHeadingElement>(null);
@@ -24,16 +25,19 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const finalHeaderRef = useRef<HTMLDivElement>(null);
 
-  // Set animation complete immediately if skipping
+  // React to changes of the `skipAnimation` prop and mark the animation
+  // as completed as soon as we decide to skip it. Because this logic
+  // only runs after hydration, it will never cause a mismatch between
+  // server and client markup.
   useEffect(() => {
-    if (shouldSkipAnimation) {
+    if (skipAnimation) {
       setAnimationComplete(true);
     }
-  }, [shouldSkipAnimation]);
+  }, [skipAnimation]);
 
   // Intro animation effect
   useEffect(() => {
-    if (animationComplete || shouldSkipAnimation) return; // Don't run animation if already complete or skipping
+    if (animationComplete || skipAnimation) return; // Don't run animation if already complete or skipping
     
     if (!headerRef.current || !containerRef.current || !welcomeLineRef.current || !growgamiTextRef.current || !subtitleRef.current) return;
 
@@ -95,8 +99,11 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
         duration: 0.8,
         ease: "power2.inOut",
         onComplete: () => {
-          // Mark animation as played in session storage
-          sessionStorage.setItem('headerAnimationPlayed', 'true');
+          // Mark animation as played so subsequent navigations within the same
+          // tab can skip the intro.
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('headerAnimationPlayed', 'true');
+          }
           setAnimationComplete(true);
         }
       }, "+=1.0");
@@ -105,7 +112,7 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
     return () => {
       growgamiSplit.revert();
     };
-  }, [animationComplete, shouldSkipAnimation]);
+  }, [animationComplete, skipAnimation]);
 
   // Final header fade-in animation effect
   useEffect(() => {
@@ -118,14 +125,14 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
     gsap.to(finalHeaderRef.current, {
       opacity: 1,
       y: 0,
-      duration: shouldSkipAnimation ? 0 : 1.0, // No animation if skipping
+      duration: skipAnimation ? 0 : 1.0, // No animation if skipping
       ease: "power2.out",
-      delay: shouldSkipAnimation ? 0 : 0.2 // No delay if skipping
+      delay: skipAnimation ? 0 : 0.2 // No delay if skipping
     });
-  }, [animationComplete, shouldSkipAnimation]);
+  }, [animationComplete, skipAnimation]);
 
   // Show intro animation only if not skipping
-  if (!animationComplete && !shouldSkipAnimation) {
+  if (!animationComplete && !skipAnimation) {
     return (
       <section 
         className="fixed inset-0 z-[1000] h-screen bg-[#f8f8f8] backdrop-blur-sm border-b border-white/20" 
