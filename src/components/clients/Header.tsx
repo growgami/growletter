@@ -12,7 +12,11 @@ interface HeaderProps {
 }
 
 export default function Header({ skipAnimation = false }: HeaderProps) {
-  const [animationComplete, setAnimationComplete] = useState(skipAnimation);
+  // Check if animation has already been played in this session
+  const hasPlayedAnimation = typeof window !== 'undefined' && sessionStorage.getItem('headerAnimationPlayed') === 'true';
+  const shouldSkipAnimation = skipAnimation || hasPlayedAnimation;
+  
+  const [animationComplete, setAnimationComplete] = useState(shouldSkipAnimation);
   const headerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const welcomeLineRef = useRef<HTMLHeadingElement>(null);
@@ -22,14 +26,14 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
 
   // Set animation complete immediately if skipping
   useEffect(() => {
-    if (skipAnimation) {
+    if (shouldSkipAnimation) {
       setAnimationComplete(true);
     }
-  }, [skipAnimation]);
+  }, [shouldSkipAnimation]);
 
   // Intro animation effect
   useEffect(() => {
-    if (animationComplete || skipAnimation) return; // Don't run animation if already complete or skipping
+    if (animationComplete || shouldSkipAnimation) return; // Don't run animation if already complete or skipping
     
     if (!headerRef.current || !containerRef.current || !welcomeLineRef.current || !growgamiTextRef.current || !subtitleRef.current) return;
 
@@ -91,6 +95,8 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
         duration: 0.8,
         ease: "power2.inOut",
         onComplete: () => {
+          // Mark animation as played in session storage
+          sessionStorage.setItem('headerAnimationPlayed', 'true');
           setAnimationComplete(true);
         }
       }, "+=1.0");
@@ -99,7 +105,7 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
     return () => {
       growgamiSplit.revert();
     };
-  }, [animationComplete, skipAnimation]);
+  }, [animationComplete, shouldSkipAnimation]);
 
   // Final header fade-in animation effect
   useEffect(() => {
@@ -112,14 +118,14 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
     gsap.to(finalHeaderRef.current, {
       opacity: 1,
       y: 0,
-      duration: skipAnimation ? 0 : 1.0, // No animation if skipping
+      duration: shouldSkipAnimation ? 0 : 1.0, // No animation if skipping
       ease: "power2.out",
-      delay: skipAnimation ? 0 : 0.2 // No delay if skipping
+      delay: shouldSkipAnimation ? 0 : 0.2 // No delay if skipping
     });
-  }, [animationComplete, skipAnimation]);
+  }, [animationComplete, shouldSkipAnimation]);
 
   // Show intro animation only if not skipping
-  if (!animationComplete && !skipAnimation) {
+  if (!animationComplete && !shouldSkipAnimation) {
     return (
       <section 
         className="fixed inset-0 z-[1000] h-screen bg-[#f8f8f8] backdrop-blur-sm border-b border-white/20" 

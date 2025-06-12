@@ -15,59 +15,64 @@ const getGridLayout = (count: number) => {
   return "grid-cols-3 lg:grid-cols-4 max-w-7xl"; // For 10+ clients
 };
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.8,
-      staggerChildren: 0.4,
-      delayChildren: 0.2
-    }
-  }
-};
-
-const titleVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 50,
-    scale: 0.9
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 1.0,
-      ease: [0.6, -0.05, 0.01, 0.99] // Custom cubic-bezier for smooth bounce
-    }
-  }
-};
-
-const cardVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 80,
-    scale: 0.8
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 1.2,
-      ease: [0.6, -0.05, 0.01, 0.99],
-      type: "spring",
-      stiffness: 100,
-      damping: 15
-    }
-  }
-};
-
 export default function ClientCards() {
   const router = useRouter();
   const gridLayout = getGridLayout(clients.length);
+  
+  // Check if header animation was skipped to adjust animation timing
+  const hasPlayedHeaderAnimation = typeof window !== 'undefined' && sessionStorage.getItem('headerAnimationPlayed') === 'true';
+  const isFromNewsPage = typeof window !== 'undefined' && sessionStorage.getItem('fromNewsPage') === 'true';
+  const shouldReduceAnimations = hasPlayedHeaderAnimation || isFromNewsPage;
+
+  // Dynamic animation variants based on whether header animation was skipped
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: shouldReduceAnimations ? 0.3 : 0.8,
+        staggerChildren: shouldReduceAnimations ? 0.1 : 0.4,
+        delayChildren: shouldReduceAnimations ? 0 : 0.2
+      }
+    }
+  };
+
+  const titleVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: shouldReduceAnimations ? 20 : 50,
+      scale: shouldReduceAnimations ? 0.95 : 0.9
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: shouldReduceAnimations ? 0.4 : 1.0,
+        ease: [0.6, -0.05, 0.01, 0.99]
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: shouldReduceAnimations ? 40 : 80,
+      scale: shouldReduceAnimations ? 0.9 : 0.8
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: shouldReduceAnimations ? 0.5 : 1.2,
+        ease: [0.6, -0.05, 0.01, 0.99],
+        type: "spring",
+        stiffness: shouldReduceAnimations ? 150 : 100,
+        damping: shouldReduceAnimations ? 20 : 15
+      }
+    }
+  };
 
   const handleCardClick = (clientId: number) => {
     router.push(`/social-board?client=${clientId}`);

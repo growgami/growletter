@@ -21,7 +21,7 @@ export const clients: Client[] = [
   {
     id: 3,
     title: "USDT0",
-    category: "usdt",
+    category: "USDT0",
     icon: "/assets/logos/usdt0.jpg"
   },
   {
@@ -32,8 +32,8 @@ export const clients: Client[] = [
   },
   {
     id: 5,
-    title: "Arbitrium",
-    category: "arbitrium",
+    title: "Arbitrum",
+    category: "arbitrum",
     icon: "/assets/logos/arb.svg"
   },
   {

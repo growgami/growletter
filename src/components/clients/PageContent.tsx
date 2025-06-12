@@ -14,11 +14,16 @@ export default function PageContent() {
       document.referrer.includes('/news') || 
       sessionStorage.getItem('fromNewsPage') === 'true';
 
-    if (isFromNewsPage) {
+    // Check if header animation has already been played in this session
+    const hasPlayedHeaderAnimation = sessionStorage.getItem('headerAnimationPlayed') === 'true';
+
+    if (isFromNewsPage || hasPlayedHeaderAnimation) {
       setSkipAnimation(true);
       setShowClientCards(true);
-      // Clear the session storage flag
-      sessionStorage.removeItem('fromNewsPage');
+      // Clear the session storage flag for news page
+      if (isFromNewsPage) {
+        sessionStorage.removeItem('fromNewsPage');
+      }
     } else {
       // Delay showing client cards to allow header animation to complete
       // Header animation takes about 6 seconds total (intro + fade out + final header fade in)
