@@ -6,6 +6,7 @@ import { useAuthorsQuery } from "@/hooks/query/usePeopleQuery";
 import { useUpvotesQuery, useUpvoteMutation, useSessionUpvotesQuery, useHasUpvoted } from "@/hooks/query/useUpvotesQuery";
 import { formatUpvotes, type Author } from "@/lib/api/people";
 import { getUpvoteCountByAuthor } from "@/lib/api/upvotes";
+import Image from 'next/image';
 
 // UpvoteButton component with session tracking and optimistic UI
 function UpvoteButton({ 
@@ -244,10 +245,12 @@ export default function AuthorTable() {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           {author.pfp ? (
-                            <img
+                            <Image
                               src={author.pfp}
                               alt={author.name}
-                              className="w-10 h-10 rounded-full mr-3 object-cover"
+                              width={40}
+                              height={40}
+                              className="rounded-full mr-3 object-cover"
                               onError={(e) => {
                                 // Fallback to initials if image fails to load
                                 const target = e.target as HTMLImageElement;

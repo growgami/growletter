@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import connectToUpvotesDB from '@/lib/db/mongoose';
-import Upvote from '@/lib/db/models/upvote';
+import Upvote, { IUpvote } from '@/lib/db/models/upvote';
+import { Model } from 'mongoose';
 
 export async function GET() {
   try {
     await connectToUpvotesDB();
     
-    const upvotes = await Upvote.find({}).sort({ upvote_count: -1 });
+    const upvotes = await (Upvote as Model<IUpvote>).find({}).sort({ upvote_count: -1 });
     
     return NextResponse.json({
       success: true,
@@ -34,8 +35,7 @@ export async function POST(request: Request) {
 
     await connectToUpvotesDB();
     
-    // Use findOneAndUpdate with upsert to either increment existing or create new
-    const updatedUpvote = await Upvote.findOneAndUpdate(
+    const updatedUpvote = await (Upvote as Model<IUpvote>).findOneAndUpdate(
       { author_id: author_id },
       {
         $inc: { upvote_count: 1 },

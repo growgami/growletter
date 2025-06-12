@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, cubicBezier } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { clients  } from "./client-list/clients";
@@ -49,7 +49,7 @@ export default function ClientCards() {
       scale: 1,
       transition: {
         duration: shouldReduceAnimations ? 0.4 : 1.0,
-        ease: [0.6, -0.05, 0.01, 0.99]
+        ease: cubicBezier(0.6, -0.05, 0.01, 0.99)
       }
     }
   };
@@ -65,11 +65,10 @@ export default function ClientCards() {
       y: 0,
       scale: 1,
       transition: {
-        duration: shouldReduceAnimations ? 0.5 : 1.2,
-        ease: [0.6, -0.05, 0.01, 0.99],
-        type: "spring",
+        type: "spring" as const,
         stiffness: shouldReduceAnimations ? 150 : 100,
-        damping: shouldReduceAnimations ? 20 : 15
+        damping: shouldReduceAnimations ? 20 : 15,
+        ease: cubicBezier(0.6, -0.05, 0.01, 0.99)
       }
     }
   };
