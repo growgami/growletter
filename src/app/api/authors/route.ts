@@ -19,14 +19,7 @@ export async function GET() {
     })
 
     // Transform the data to match the Author interface exactly
-    const authors = authorStats.map((stat: {
-      authorId: string;
-      author: string;
-      authorName: string;
-      authorPfp: string | null;
-      authorFollowers: number;
-      _count: { id: number };
-    }, index: number) => ({
+    const authors = authorStats.map((stat, index) => ({
       id: index + 1,
       authorId: stat.authorId, // Include the actual Twitter author ID
       name: stat.authorName, // Use real author name

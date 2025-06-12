@@ -79,7 +79,7 @@ function useResponsiveColumns(breakpoints = { sm: 1, md: 2, lg: 5 }) {
       clearTimeout(timeoutId)
       cancelAnimationFrame(rafId)
     }
-  }, [breakpoints])
+  }, [breakpoints.sm, breakpoints.md, breakpoints.lg])
 
   // Return SSR-safe column count
   return isMounted ? columnCount : breakpoints.lg

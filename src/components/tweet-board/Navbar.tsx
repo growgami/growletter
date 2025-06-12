@@ -15,7 +15,7 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const clientId = searchParams?.get('client');
+  const clientId = searchParams.get('client');
   
   // Sync local state with prop changes
   useEffect(() => {

@@ -8,7 +8,7 @@ import Navbar from "@/components/tweet-board/Navbar";
 
 export default function PageContent() {
   const searchParams = useSearchParams();
-  const clientId = searchParams?.get('client');
+  const clientId = searchParams.get('client');
   const [activeTab, setActiveTab] = useState<"Social Board" | "People">("Social Board");
 
   const handleTabChange = (tab: "Social Board" | "People") => {

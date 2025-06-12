@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, cubicBezier } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import TwitterEmbed from "./TwitterEmbed";
 import FilterTabs from "./FilterTabs";
@@ -53,7 +53,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: "easeOut" as const
+      ease: "easeOut"
     }
   }
 };
@@ -67,7 +67,7 @@ const newItemVariants = {
     scale: 1,
     transition: {
       duration: 0.8,
-      ease: "easeOut" as const,
+      ease: "easeOut",
       delay: 0.1
     }
   }
