@@ -32,9 +32,13 @@ export interface FetchTweetsParams {
   search?: string; // Add search parameter
 }
 
-export const fetchTweets = async ({ limit = 15, cursor, tag, clientId, search }: FetchTweetsParams): Promise<TweetsResponse> => {
+export const fetchTweets = async ({ limit, cursor, tag, clientId, search }: FetchTweetsParams): Promise<TweetsResponse> => {
   const params = new URLSearchParams();
-  params.append('limit', String(limit));
+  
+  // Only append limit if explicitly provided, let API route handle default (12)
+  if (limit !== undefined) {
+    params.append('limit', String(limit));
+  }
 
   if (cursor) {
     params.append('cursor', cursor);

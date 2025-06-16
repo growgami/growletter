@@ -11,35 +11,54 @@ function extractTweetId(url: string): string | null {
 
 interface TwitterEmbedProps {
   url: string;
+  columnCount?: number;
 }
 
-export default function TwitterEmbed({ url }: TwitterEmbedProps) {
+export default function TwitterEmbed({ url, columnCount = 5 }: TwitterEmbedProps) {
   const tweetId = extractTweetId(url);
-  const [embedWidth, setEmbedWidth] = useState(380); // Default for 5 columns
+  const [embedWidth, setEmbedWidth] = useState(350);
   
   useEffect(() => {
     const updateEmbedWidth = () => {
-      if (typeof window === 'undefined') return;
+      // Calculate width based on column count with responsive considerations
+      let width: number;
       
-      const width = window.innerWidth;
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      const isHighlyScaled = devicePixelRatio >= 1.4; // 150% scale or higher
-      const isMediumScaled = devicePixelRatio > 1.1 && devicePixelRatio < 1.4; // 125% scale
+      // Calculate available width per column
+      const gapWidth = 8; // 2px gap between columns in CSS
+      const totalGaps = (columnCount - 1) * gapWidth;
+      const padding = 32; // Account for container padding
+      const availableWidth = window.innerWidth - totalGaps - padding;
+      const calculatedWidth = availableWidth / columnCount;
       
-      // Match the breakpoint logic from useMasonryLayout
-      if (width < 768) {
-        setEmbedWidth(290); // 1 column
-      } else if (width < 1024 && width >= 768) {
-        setEmbedWidth(425); // 2 columns
-      } else if (width < 1366 || isHighlyScaled) {
-        setEmbedWidth(400); // 3 columns
-      } else if (width < 1600 || isMediumScaled) {
-        setEmbedWidth(400); // 4 columns
-      } else if (width >= 1920 && devicePixelRatio <= 1.1) {
-        setEmbedWidth(420); // 5 columns
-      } else {
-        setEmbedWidth(400); // fallback for edge cases
+      // Set appropriate width limits based on column count
+      switch (columnCount) {
+        case 1:
+          width = Math.min(calculatedWidth, 600); // Mobile: cap at reasonable max
+          break;
+        case 2:
+          width = Math.min(calculatedWidth, 500); // Tablet: cap at reasonable max
+          break;
+        case 3:
+          width = Math.min(calculatedWidth, 420);
+          break;
+        case 4:
+          width = Math.min(calculatedWidth, 380);
+          break;
+        case 5:
+          width = Math.min(calculatedWidth, 350);
+          break;
+        case 6:
+          width = Math.min(calculatedWidth, 345);
+          break;
+        default:
+          width = Math.min(calculatedWidth, 350);
+          break;
       }
+      
+      // Ensure minimum width for readability
+      width = Math.max(300, width);
+      
+      setEmbedWidth(width);
     };
 
     // Set initial width
@@ -57,11 +76,20 @@ export default function TwitterEmbed({ url }: TwitterEmbedProps) {
       window.removeEventListener('resize', debouncedUpdate);
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [columnCount]);
   
   if (!tweetId) return null;
+  
   return (
-    <div data-theme='light' style={{ maxWidth: embedWidth, width: '100%', margin: '0 auto'}}>
+    <div 
+      data-theme='light' 
+      style={{ 
+        maxWidth: embedWidth, 
+        width: '100%', 
+        margin: '0 auto',
+        transition: 'max-width 0.2s ease-out'
+      }}
+    >
       <Tweet id={tweetId} />
     </div>
   );

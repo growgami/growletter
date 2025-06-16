@@ -109,7 +109,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     hasMore,
     isFetchingNextPage,
     totalTweets
-  } = useTweets(15, selectedTag === "All" ? undefined : selectedTag, clientId, searchQuery || undefined);
+  } = useTweets(undefined, selectedTag === "All" ? undefined : selectedTag, clientId, searchQuery || undefined);
 
   // Track previous tweet count to identify new items
   const previousTweetCountRef = useRef(0);
@@ -117,8 +117,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
 
   // Set up masonry layout
   const { columns, columnCount, isInitialized } = useMasonryLayout({ 
-    items: tweets,
-    breakpoints: { sm: 1, md: 2, lg: 5 }
+    items: tweets
   });
 
   // Set up infinite scroll
@@ -142,7 +141,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     isFirstRenderRef.current = false;
   }, [tweets.length]);
 
-  console.log('📋 ContentCards component rendered with clientId:', clientId);
+  console.log('📋 TweetBoard component rendered with clientId:', clientId);
   console.log('📊 Tweets state:', { 
     selectedTag,
     searchQuery,
@@ -184,7 +183,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
             </div>
           ) : article.embedType === 'twitter' ? (
             <div className="shadow-[0_0_0.5px_1px_gray] rounded-xl my-2">
-              <TwitterEmbed url={article.embedUrl} />
+              <TwitterEmbed url={article.embedUrl} columnCount={columnCount} />
             </div>
           ) : article.embedType === 'iframe' ? (
             <div className="aspect-auto">
@@ -210,7 +209,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
             </div>
           ) : (
             <div className="shadow-[0_0_0.5px_1px_gray] my-2">
-              <TwitterEmbed url={article.embedUrl} />
+              <TwitterEmbed url={article.embedUrl} columnCount={columnCount} />
             </div>
           )}
         </div>
@@ -307,7 +306,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
       );
     }
 
-    // Main content with tweets
+    // Main content with tweets - only render when we have tweets and layout is initialized
     return (
       <section id="tweet-board" className="px-4 w-full">
         <motion.div
@@ -325,7 +324,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
             >
               <div className="animate-pulse">Initializing layout...</div>
             </motion.div>
-          ) : (
+          ) : tweets.length > 0 && isInitialized ? (
             <motion.div
               className="flex gap-2"
               variants={containerVariants}
@@ -357,7 +356,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
                 </motion.div>
               ))}
             </motion.div>
-          )}
+          ) : null}
 
           {/* Loading more indicator */}
           {isLoadingMore && (
@@ -384,7 +383,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           )}
 
           {/* End of content indicator */}
-          {isReachingEnd && (
+          {isReachingEnd && tweets.length > 0 && (
             <motion.div 
               className="text-center py-8 text-gray-500"
               initial={{ opacity: 0 }}
@@ -400,20 +399,22 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           )}
 
           {/* Stats footer */}
-          <motion.div 
-            className="text-center mt-8 text-gray-500 text-sm space-y-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <p>
-              {searchQuery ? `Found ${totalTweets} tweets for "${searchQuery}"` : `Total tweets loaded: ${totalTweets}`}
-            </p>
-            <p>Distributed across {columnCount} columns</p>
-            {searchQuery && selectedTag !== "All" && (
-              <p>Filtered by tag: {selectedTag}</p>
-            )}
-          </motion.div>
+          {tweets.length > 0 && (
+            <motion.div 
+              className="text-center mt-8 text-gray-500 text-sm space-y-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              <p>
+                {searchQuery ? `Found ${totalTweets} tweets for "${searchQuery}"` : `Total tweets loaded: ${totalTweets}`}
+              </p>
+              <p>Distributed across {columnCount} columns</p>
+              {searchQuery && selectedTag !== "All" && (
+                <p>Filtered by tag: {selectedTag}</p>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       </section>
     );
@@ -424,7 +425,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
   };
 
   return (
-    <>
+    <div className="max-w-[96rem] mx-auto">
       <FilterTabs
         tags={TWEET_TAGS}
         selectedTag={selectedTag}
@@ -441,6 +442,6 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
       <div style={{ position: "relative", width: "100%" }}>
         {renderTweetContent()}
       </div>
-    </>
+    </div>
   );
 }

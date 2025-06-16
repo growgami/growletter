@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import type { Prisma } from '@prisma/client'
-import { getCategoryByClientId } from '@/components/clients/client-list/clients'
+import { getCategoryByClientId } from '@/constants/client-list/clients'
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '15', 10);
+    const limit = parseInt(searchParams.get('limit') || '12', 10);
     const cursor = searchParams.get('cursor'); // Tweet ID for cursor-based pagination
     const tag = searchParams.get('tag');
     const clientId = searchParams.get('client'); // New client parameter

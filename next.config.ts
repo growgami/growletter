@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     domains: [
       /* any existing domains */
       'ui-avatars.com',
+      'pbs.twimg.com',
     ],
   },
     // Disable TypeScript checking during build

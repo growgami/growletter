@@ -4,8 +4,8 @@ import QueryProvider from "@/components/shared/providers/QueryProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Growletter",
-  description: "Social Board by Growgami",
+  title: "CreatorWall",
+  description: "Social Wall by Growgami",
 };
 
 export default function RootLayout({

@@ -33,7 +33,7 @@ export function useInfiniteTweetsQuery(limit = 15, clientId?: string | null) {
 }
 
 // Enhanced convenience hook with better loading states
-export function useTweets(limit: number, tag?: string, clientId?: string | null, search?: string) {
+export function useTweets(limit?: number, tag?: string, clientId?: string | null, search?: string) {
   const {
     data,
     error,

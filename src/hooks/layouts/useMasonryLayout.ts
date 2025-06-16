@@ -16,11 +16,11 @@ interface UseMasonryLayoutOptions {
 }
 
 // Hook to get responsive column count
-function useResponsiveColumns(breakpoints = { sm: 1, md: 2, lg: 5 }) {
+function useResponsiveColumns() {
   const [isMounted, setIsMounted] = useState(false)
   const [columnCount, setColumnCount] = useState(() => {
-    // Always return desktop default for SSR to avoid hydration mismatch
-    return breakpoints.lg
+    // Default to 1 column for SSR (mobile-first approach)
+    return 1
   })
 
   useEffect(() => {
@@ -31,39 +31,30 @@ function useResponsiveColumns(breakpoints = { sm: 1, md: 2, lg: 5 }) {
       if (typeof window === 'undefined') return
       
       const width = window.innerWidth
-      const devicePixelRatio = window.devicePixelRatio || 1
-      const isHighlyScaled = devicePixelRatio >= 1.4 // 150% scale or higher
-      const isMediumScaled = devicePixelRatio > 1.1 && devicePixelRatio < 1.4 // 125% scale
-      
       let newColumnCount: number
       
-      if (width < 768) {
-        newColumnCount = breakpoints.sm // mobile
-      } else if (width < 1024 && width >= 768) {
-        newColumnCount = breakpoints.md // tablet
-      } else if (width < 1366 || isHighlyScaled) {
-        newColumnCount = 3 // small laptops or 150%+ scale
-      } else if (width < 1600 || isMediumScaled) {
-        newColumnCount = 4 // medium laptops or 125% scale
-      } else if (width >= 1920 && devicePixelRatio <= 1.1) {
-        newColumnCount = breakpoints.lg // large unscaled displays only
+      // Simple responsive breakpoints
+      if (width >= 1280) {
+        newColumnCount = 4
+      }
+      else if (width >= 1024) {
+        newColumnCount = 3
+      } else if (width >= 768) { 
+        newColumnCount = 2
       } else {
-        newColumnCount = 4 // fallback for edge cases
+        newColumnCount = 1
       }
       
       console.log('📐 Column count update:', {
         width,
-        devicePixelRatio,
-        isHighlyScaled,
-        isMediumScaled,
         newColumnCount,
-        breakpoints
+        breakpoint: width >= 960 ? '960+' : '<960'
       })
       
       setColumnCount(newColumnCount)
     }
 
-    // Set initial value immediately after mount with a small delay to ensure DOM is ready
+    // Set initial value immediately after mount
     const rafId = requestAnimationFrame(updateColumnCount)
 
     // Listen for resize events with debouncing
@@ -79,15 +70,15 @@ function useResponsiveColumns(breakpoints = { sm: 1, md: 2, lg: 5 }) {
       clearTimeout(timeoutId)
       cancelAnimationFrame(rafId)
     }
-  }, [breakpoints.sm, breakpoints.md, breakpoints.lg])
+  }, [])
 
   // Return SSR-safe column count
-  return isMounted ? columnCount : breakpoints.lg
+  return isMounted ? columnCount : 1
 }
 
 // Main masonry layout hook with stable positioning
-export function useMasonryLayout({ items, breakpoints }: UseMasonryLayoutOptions) {
-  const columnCount = useResponsiveColumns(breakpoints)
+export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
+  const columnCount = useResponsiveColumns()
   const [isInitialized, setIsInitialized] = useState(false)
   
   // Keep track of previously processed items to maintain stability

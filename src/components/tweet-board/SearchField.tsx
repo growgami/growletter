@@ -49,8 +49,14 @@ export default function SearchField({
     >
       <div className="relative w-full max-w-md">
         <div className={`relative bg-white/60 backdrop-blur-sm border transition-all duration-200 ${
-          isFocused ? 'border-gray-600 shadow-sm' : 'border-gray-500'
-        }`}>
+          isFocused 
+            ? 'border-gray-600 shadow-sm' 
+            : 'border-gray-500'
+        }`}
+          style={{
+            boxShadow: isFocused ? '4px 4px 0px rgba(0, 0, 0, 0.2)' : '0px 0px 0px rgba(0, 0, 0, 0)'
+          }}
+        >
           {/* Search Icon */}
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <motion.div

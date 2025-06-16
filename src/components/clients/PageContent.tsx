@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import ClientCards from "@/components/clients/ClientCards";
+import { useState, useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import ClientCards from "@/components/clients/sections/ClientCards";
 import Header from "@/components/clients/Header";
+import Hero from "@/components/clients/sections/Hero";
 
 export default function PageContent() {
   const [showClientCards, setShowClientCards] = useState(false);
   const [skipAnimation, setSkipAnimation] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(false);
+  const [startClientCardsAnimation, setStartClientCardsAnimation] = useState(false);
+  const navbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check if coming from news page by looking at document referrer or session storage
@@ -20,6 +25,7 @@ export default function PageContent() {
     if (isFromNewsPage || hasPlayedHeaderAnimation) {
       setSkipAnimation(true);
       setShowClientCards(true);
+      // Don't start ClientCards animation here - let scroll detection handle it
       // Clear the session storage flag for news page
       if (isFromNewsPage) {
         sessionStorage.removeItem('fromNewsPage');
@@ -29,11 +35,75 @@ export default function PageContent() {
       // Header animation takes about 6 seconds total (intro + fade out + final header fade in)
       const timer = setTimeout(() => {
         setShowClientCards(true);
+        // Don't start ClientCards animation here - let scroll detection handle it
       }, 7000); // 7 seconds to ensure header is fully complete
 
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // GSAP animation effect for navbar show/hide
+  useEffect(() => {
+    console.log('GSAP effect triggered, showNavbar:', showNavbar, 'navbarRef.current:', !!navbarRef.current);
+    
+    if (!navbarRef.current) {
+      console.log('No navbar ref available');
+      return;
+    }
+
+    const element = navbarRef.current;
+
+    if (showNavbar) {
+      console.log('Showing navbar with GSAP');
+      
+      // Start ClientCards animation when navbar starts to show
+      setStartClientCardsAnimation(true);
+      
+      // Kill any existing animations
+      gsap.killTweensOf(element);
+      
+      // Make visible and set initial position
+      element.style.display = 'flex';
+      
+      // Use fromTo for more reliable animation
+      gsap.fromTo(element, 
+        {
+          opacity: 0,
+          y: -20
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: skipAnimation ? 0.1 : 1.4, // Slower transition-in
+          delay: skipAnimation ? 0 : 1.0, // 1 second delay for scroll trigger
+          ease: "power2.out",
+          onComplete: () => console.log('Show animation complete')
+        }
+      );
+    } else {
+      console.log('Hiding navbar with GSAP');
+      
+      // Kill any existing animations
+      gsap.killTweensOf(element);
+      
+      // Animate out
+      gsap.to(element, {
+        opacity: 0,
+        y: -20,
+        duration: 0.4,
+        ease: "power2.in",
+        onComplete: () => {
+          element.style.display = 'none';
+          console.log('Hide animation complete');
+        }
+      });
+    }
+  }, [showNavbar, skipAnimation]);
+
+  const handleClientCardsBottomReached = (reached: boolean) => {
+    console.log('Client cards reached:', reached);
+    setShowNavbar(reached);
+  };
 
   return (
     <div 
@@ -48,12 +118,15 @@ export default function PageContent() {
       }}
     >
       {/* Header Section */}
-      <Header skipAnimation={skipAnimation} />
+      <Header ref={navbarRef} skipAnimation={skipAnimation} showNavbar={showNavbar} />
+
+      {/* Hero Section */}
+      <Hero onClientCardsBottomReached={handleClientCardsBottomReached} />
 
       {/* Client Cards Section - Only render after header animation completes or immediately if skipping */}
       {showClientCards && (
-        <main className="flex flex-1 flex-col items-center justify-start pt-12 sm:pt-16 md:pt-20 px-2 sm:px-4">
-          <ClientCards />
+        <main id="client-cards" className="flex flex-1 flex-col items-center justify-start pt-12 sm:pt-16 md:pt-20 px-2 sm:px-4">
+          <ClientCards startAnimation={startClientCardsAnimation} />
         </main>
       )}
     </div>

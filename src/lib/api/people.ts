@@ -15,15 +15,21 @@ export interface AuthorsResponse {
   authors: Author[];
 }
 
-export const fetchAuthors = async (): Promise<AuthorsResponse> => {
-  const response = await fetch('/api/authors');
+export const fetchAuthors = async (clientId?: string | null): Promise<AuthorsResponse> => {
+  const url = new URL('/api/authors', window.location.origin);
+  
+  if (clientId) {
+    url.searchParams.set('client', clientId);
+  }
+  
+  const response = await fetch(url.toString());
   
   if (!response.ok) {
     throw new Error(`Failed to fetch authors: ${response.status} ${response.statusText}`);
   }
   
   const data = await response.json();
-  console.log('📊 Fetched authors from API:', data.authors.length);
+  console.log('📊 Fetched authors from API:', data.authors.length, clientId ? `for client ${clientId}` : 'for all clients');
   
   return data;
 }

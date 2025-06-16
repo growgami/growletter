@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef } from "react";
 import { gsap } from "gsap";
 import { SplitText } from "gsap/SplitText";
 
@@ -9,9 +9,10 @@ gsap.registerPlugin(SplitText);
 
 interface HeaderProps {
   skipAnimation?: boolean;
+  showNavbar?: boolean;
 }
 
-export default function Header({ skipAnimation = false }: HeaderProps) {
+const Header = forwardRef<HTMLDivElement, HeaderProps>(({ skipAnimation = false }, navbarRef) => {
   // Local state to track whether the intro animation has finished
   // Initialise based purely on the incoming prop so that the first
   // render on the client is guaranteed to match the HTML produced on
@@ -23,7 +24,6 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
   const welcomeLineRef = useRef<HTMLHeadingElement>(null);
   const growgamiTextRef = useRef<HTMLSpanElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
-  const finalHeaderRef = useRef<HTMLDivElement>(null);
 
   // React to changes of the `skipAnimation` prop and mark the animation
   // as completed as soon as we decide to skip it. Because this logic
@@ -114,23 +114,6 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
     };
   }, [animationComplete, skipAnimation]);
 
-  // Final header fade-in animation effect
-  useEffect(() => {
-    if (!animationComplete || !finalHeaderRef.current) return;
-
-    // Set initial state for final header
-    gsap.set(finalHeaderRef.current, { opacity: 0, y: 20 });
-
-    // Animate final header fade in
-    gsap.to(finalHeaderRef.current, {
-      opacity: 1,
-      y: 0,
-      duration: skipAnimation ? 0 : 1.0, // No animation if skipping
-      ease: "power2.out",
-      delay: skipAnimation ? 0 : 0.2 // No delay if skipping
-    });
-  }, [animationComplete, skipAnimation]);
-
   // Show intro animation only if not skipping
   if (!animationComplete && !skipAnimation) {
     return (
@@ -149,7 +132,7 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
                 ref={growgamiTextRef}
                 className="font-heading font-bold invisible"
               >
-                Growletter
+                CreatorWall
               </span>
             </h1>
             <p ref={subtitleRef} className="mt-4 text-2xl font-light text-gray-600 lg:text-2xl opacity-0 translate-y-8">
@@ -161,13 +144,25 @@ export default function Header({ skipAnimation = false }: HeaderProps) {
     );
   }
 
-  // Show final minimal sticky header state with divider
+  // Always render the navbar container, let PageContent control visibility with GSAP
   return (
-    <header ref={finalHeaderRef} className="sticky top-0 z-30 bg-gray-50/80 backdrop-blur-sm border-b border-gray-200 shadow-sm flex justify-center py-6">
+    <header 
+      ref={navbarRef} 
+      className="fixed top-0 left-0 right-0 z-30 bg-gray-50/80 backdrop-blur-sm border-b border-gray-200 shadow-sm flex justify-center py-6"
+      style={{ 
+        display: 'none', 
+        opacity: 0,
+        transform: 'translateY(-20px)'
+      }}
+    >
       <div className="flex items-baseline gap-3">
-        <span className="font-heading text-2xl text-gray-900 font-bold select-none">Growletter</span>
+        <span className="font-heading text-2xl text-gray-900 font-bold select-none">CreatorWall</span>
         <span className="text-gray-400 text-sm tracking-wide select-none">by Growgami</span>
       </div>
     </header>
   );
-}
+});
+
+Header.displayName = 'Header';
+
+export default Header;

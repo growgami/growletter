@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getClientById } from "@/components/clients/client-list/clients";
+import { getClientById } from "@/constants/client-list/clients";
 
 interface NavbarProps {
   activeTab?: "Social Board" | "People";
@@ -13,9 +13,15 @@ interface NavbarProps {
 export default function Navbar({ activeTab = "Social Board", onTabChange }: NavbarProps) {
   const [currentTab, setCurrentTab] = useState<"Social Board" | "People">(activeTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client');
+  
+  // Ensure hydration is complete
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
   
   // Sync local state with prop changes
   useEffect(() => {
@@ -114,29 +120,44 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
             </div>
 
             {/* Mobile Hamburger Button */}
-            <motion.button
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-white/60 backdrop-blur-sm border border-gray-200"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className="flex flex-col space-y-1">
-                <motion.div
-                  className="w-5 h-0.5 bg-gray-600"
-                  animate={mobileMenuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+            <div className="md:hidden">
+              {isHydrated ? (
+                <motion.button
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/60 backdrop-blur-sm border border-gray-200"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ duration: 0.2 }}
-                />
-                <motion.div
-                  className="w-5 h-0.5 bg-gray-600"
-                  animate={mobileMenuOpen ? { opacity: 0 } : { opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                />
-                <motion.div
-                  className="w-5 h-0.5 bg-gray-600"
-                  animate={mobileMenuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                />
-              </div>
-            </motion.button>
+                >
+                  <div className="flex flex-col space-y-1">
+                    <motion.div
+                      className="w-5 h-0.5 bg-gray-600"
+                      animate={mobileMenuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                    <motion.div
+                      className="w-5 h-0.5 bg-gray-600"
+                      animate={mobileMenuOpen ? { opacity: 0 } : { opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                    <motion.div
+                      className="w-5 h-0.5 bg-gray-600"
+                      animate={mobileMenuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  </div>
+                </motion.button>
+              ) : (
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/60 backdrop-blur-sm border border-gray-200">
+                  <div className="flex flex-col space-y-1">
+                    <div className="w-5 h-0.5 bg-gray-600" />
+                    <div className="w-5 h-0.5 bg-gray-600" />
+                    <div className="w-5 h-0.5 bg-gray-600" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -177,9 +198,9 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
                   {/* Navigation Tabs */}
                   <div className="space-y-2">
                     <motion.button
-                      className={`w-full px-4 py-3 rounded-xl text-left font-medium transition-colors font-body ${
+                      className={`w-full px-4 py-3 rounded-md text-left font-medium transition-colors font-body relative ${
                         currentTab === "Social Board"
-                          ? "bg-gray-900 text-white"
+                          ? "bg-white/80 backdrop-blur-sm border border-gray-600 text-gray-900"
                           : "bg-gray-50 text-gray-700 hover:bg-gray-100"
                       }`}
                       onClick={() => handleTabClick("Social Board")}
@@ -189,9 +210,9 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
                     </motion.button>
 
                     <motion.button
-                      className={`w-full px-4 py-3 rounded-xl text-left font-medium transition-colors font-body ${
+                      className={`w-full px-4 py-3 rounded-md text-left font-medium transition-colors font-body relative ${
                         currentTab === "People"
-                          ? "bg-gray-900 text-white"
+                          ? "bg-white/80 backdrop-blur-sm border border-gray-600 text-gray-900"
                           : "bg-gray-50 text-gray-700 hover:bg-gray-100"
                       }`}
                       onClick={() => handleTabClick("People")}

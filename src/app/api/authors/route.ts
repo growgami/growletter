@@ -1,13 +1,36 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
+import type { Prisma } from '@prisma/client'
+import { getCategoryByClientId } from '@/constants/client-list/clients'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('📊 Fetching author analytics...')
+    const { searchParams } = new URL(request.url);
+    const clientId = searchParams.get('client'); // New client parameter
+    
+    console.log('📊 Fetching author analytics...', { clientId })
 
-    // Get aggregated author data with real names and follower counts
+    // Build where clause for filtering by category
+    const whereClause: Prisma.TweetWhereInput = {};
+    
+    // Handle client-based filtering
+    if (clientId) {
+      const clientIdNum = parseInt(clientId, 10);
+      const clientCategory = getCategoryByClientId(clientIdNum);
+      
+      if (clientCategory) {
+        // Filter by exact category match
+        whereClause.category = clientCategory;
+        console.log('🏷️ Filtering authors by client category:', clientCategory);
+      } else {
+        console.log('⚠️ Unknown client ID:', clientId);
+      }
+    }
+
+    // Get aggregated author data with real names and follower counts, filtered by category
     const authorStats = await prisma.tweet.groupBy({
       by: ['authorId', 'author', 'authorName', 'authorPfp', 'authorFollowers'],
+      where: whereClause,
       _count: {
         id: true,
       },
@@ -32,7 +55,7 @@ export async function GET() {
       upvotes: 0 // Will be populated from upvotes database
     }))
 
-    console.log(`📤 Returning ${authors.length} authors`)
+    console.log(`📤 Returning ${authors.length} authors for client ${clientId || 'all'}`)
 
     return NextResponse.json({ authors }, {
       headers: {
