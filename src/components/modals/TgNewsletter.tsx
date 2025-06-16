@@ -134,7 +134,6 @@ export default function TgNewsletter({ isOpen, onClose, clientId }: TgNewsletter
                     <p className="text-xs text-gray-600 font-body">
                       • Get scheduled market insights<br/>
                       • Exclusive analysis and updates<br/>
-                      • Join our community of crypto enthusiasts
                     </p>
                   </div>
                 </div>
