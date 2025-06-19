@@ -139,7 +139,7 @@ export default function TgNewsletter({ isOpen, onClose, clientId }: TgNewsletter
                 </div>
               </div>
 
-              {/* Footer */}
+              {/* Footer */}  
               <div className="p-4 border-t border-gray-200 bg-gray-50/40">
                 <div className="flex justify-center space-x-3">
                   <motion.button

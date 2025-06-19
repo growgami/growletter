@@ -8,13 +8,23 @@ export interface TelegramLink {
 export const telegramLinks: TelegramLink[] = [
   {
     clientId: 1, // Polygon
-    url: "https://t.me/polkadotalpha",
-    title: "Polkadot Alpha"
+    url: "https://t.me/polygonainews",
+    title: "Polygon AI News"
   },
   {
-    clientId: 6, // Near
-    url: "https://t.me/nearalphahub", 
-    title: "Near Alpha Hub"
+    clientId: 2, // Plasma
+    url: "https://web.telegram.org/a/#-1002346994912",
+    title: "Plasma AI News"
+  },
+  {
+    clientId: 3, // USDT0
+    url: "https://t.me/usdt0ainews",
+    title: "USDT0 AI News"
+  },
+  {
+    clientId: 4, // Tether
+    url: "https://t.me/usdt0ainews",
+    title: "Tether AI News"
   },
   {
     clientId: 5, // Arbitrum
@@ -22,9 +32,9 @@ export const telegramLinks: TelegramLink[] = [
     title: "Arbitrum AI News"
   },
   {
-    clientId: 2, // Plasma (using growgami as fallback)
-    url: "https://t.me/growgamiresearch",
-    title: "Growgami Research"
+    clientId: 6, // Near
+    url: "https://t.me/nearalphahub", 
+    title: "Near Alpha Hub"
   }
 ];
 

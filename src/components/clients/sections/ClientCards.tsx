@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { clients  } from "../../../constants/client-list/clients";
+import { clients } from "../../../constants/client-list/clients";
+import { arrangeClients, isClientDisabled } from "../../../constants/client-list/clientCardsConfig";
 
 // Helper function to determine grid layout based on client count
 const getGridLayout = (count: number) => {
@@ -20,7 +21,11 @@ interface ClientCardsProps {
 
 export default function ClientCards({ startAnimation = false }: ClientCardsProps) {
   const router = useRouter();
-  const gridLayout = getGridLayout(clients.length);
+  
+  // Arrange clients based on configuration
+  const arrangedClients = arrangeClients(clients);
+  
+  const gridLayout = getGridLayout(arrangedClients.length);
   const [shouldReduceAnimations, setShouldReduceAnimations] = useState(false);
 
   useEffect(() => {
@@ -86,7 +91,11 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
     }
   };
 
-  const handleCardClick = (clientId: number) => {
+  const handleCardClick = (clientId: number, clientTitle: string) => {
+    // Don't navigate if client is disabled
+    if (isClientDisabled(clientTitle)) {
+      return;
+    }
     router.push(`/social-board?client=${clientId}`);
   };
 
@@ -118,58 +127,79 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
           className={`w-full mx-auto grid ${gridLayout} gap-2 sm:gap-6 px-4`}
           variants={containerVariants}
         >
-          {clients.map((client) => (
-            <motion.button
-              key={client.id}
-              className="group relative flex flex-col items-center justify-center bg-gray-50 border border-gray-500 p-2 sm:p-8 focus:outline-none transition-all duration-300 min-h-[80px] sm:min-h-[140px] active:scale-95"
-              style={{
-                boxShadow: '4px 4px 0px rgba(0, 0, 0, 0.2)'
-              }}
-              variants={cardVariants}
-              whileHover={{ 
-                scale: 1.02,
-                boxShadow: '6px 6px 0px rgba(0, 0, 0, 0.25)'
-              }}
-              whileTap={{ 
-                scale: 0.98,
-                boxShadow: '2px 2px 0px rgba(0, 0, 0, 0.15)'
-              }}
-              onClick={() => handleCardClick(client.id)}
-            >
-              {/* Icon */}
-              <motion.div
-                className="flex items-center justify-center mb-1 sm:mb-4 group-hover:scale-105 transition-transform"
+          {arrangedClients.map((client) => {
+            const isDisabled = isClientDisabled(client.title);
+            
+            return (
+              <motion.button
+                key={client.id}
+                className={`group relative flex flex-col items-center justify-center bg-gray-50 border border-gray-500 p-2 sm:p-8 focus:outline-none transition-all duration-300 min-h-[80px] sm:min-h-[140px] ${
+                  isDisabled 
+                    ? 'opacity-40 cursor-not-allowed' 
+                    : 'active:scale-95 hover:shadow-lg'
+                }`}
+                style={{
+                  boxShadow: isDisabled 
+                    ? '2px 2px 0px rgba(0, 0, 0, 0.1)' 
+                    : '4px 4px 0px rgba(0, 0, 0, 0.2)'
+                }}
+                variants={cardVariants}
+                whileHover={isDisabled ? {} : { 
+                  scale: 1.02,
+                  boxShadow: '6px 6px 0px rgba(0, 0, 0, 0.25)'
+                }}
+                whileTap={isDisabled ? {} : { 
+                  scale: 0.98,
+                  boxShadow: '2px 2px 0px rgba(0, 0, 0, 0.15)'
+                }}
+                onClick={() => handleCardClick(client.id, client.title)}
+                disabled={isDisabled}
               >
-                <Image
-                  src={client.icon}
-                  alt={client.title}
-                  width={40}
-                  height={40}
-                  className="w-6 h-6 sm:w-12 sm:h-12"
-                />
-              </motion.div>
-              
-              {/* Content */}
-              <div className="text-center">
-                <h3 className="font-semibold text-gray-900 text-xs sm:text-lg font-body mb-0 sm:mb-2 group-hover:text-gray-700 transition-colors leading-tight">
-                  {client.title}
-                </h3>
-              </div>
-                
-              {/* Arrow indicator */}
-              <div className="absolute top-1 right-1 sm:top-4 sm:right-4 opacity-40 group-hover:opacity-70 transition-opacity">
-                <svg 
-                  className="w-3 h-3 sm:w-5 sm:h-5 text-gray-500" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  viewBox="0 0 24 24"
+                {/* Icon */}
+                <motion.div
+                  className={`flex items-center justify-center mb-1 sm:mb-4 transition-transform ${
+                    isDisabled ? '' : 'group-hover:scale-105'
+                  }`}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
-              </div>
-            </motion.button>
-          ))}
+                  <Image
+                    src={client.icon}
+                    alt={client.title}
+                    width={40}
+                    height={40}
+                    className={`w-6 h-6 sm:w-12 sm:h-12 ${isDisabled ? 'grayscale' : ''}`}
+                  />
+                </motion.div>
+                
+                {/* Content */}
+                <div className="text-center">
+                  <h3 className={`font-semibold text-xs sm:text-lg font-body mb-0 sm:mb-2 transition-colors leading-tight ${
+                    isDisabled 
+                      ? 'text-gray-400' 
+                      : 'text-gray-900 group-hover:text-gray-700'
+                  }`}>
+                    {client.title}
+                  </h3>
+                </div>
+                  
+                {/* Arrow indicator */}
+                <div className={`absolute top-1 right-1 sm:top-4 sm:right-4 transition-opacity ${
+                  isDisabled 
+                    ? 'opacity-20' 
+                    : 'opacity-40 group-hover:opacity-70'
+                }`}>
+                  <svg 
+                    className="w-3 h-3 sm:w-5 sm:h-5 text-gray-500" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </motion.button>
+            );
+          })}
         </motion.div>
       </motion.div>
     </section>
