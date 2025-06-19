@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getClientById } from "@/constants/client-list/clients";
+import { getTelegramLinkByClientId } from "@/constants/telegramLinks";
 
 interface NavbarProps {
   activeTab?: "Social Board" | "People";
@@ -53,6 +54,28 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
     setMobileMenuOpen(false); // Close mobile menu
   };
 
+  const handleTelegramClick = () => {
+    if (!clientId) return;
+    
+    const clientIdNum = parseInt(clientId, 10);
+    const telegramLink = getTelegramLinkByClientId(clientIdNum);
+    
+    if (telegramLink) {
+      window.open(telegramLink.url, '_blank');
+    }
+    setMobileMenuOpen(false); // Close mobile menu
+  };
+
+  // Get telegram link for current client
+  const getTelegramLink = () => {
+    if (!clientId) return null;
+    
+    const clientIdNum = parseInt(clientId, 10);
+    return getTelegramLinkByClientId(clientIdNum);
+  };
+
+  const telegramLink = getTelegramLink();
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-50/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
@@ -74,6 +97,21 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
               >
                 Wall
               </motion.button>
+
+              {/* Telegram Button - Only show if telegram link exists */}
+              {telegramLink && (
+                <motion.button
+                  className="px-4 py-2 bg-blue-500/90 backdrop-blur-sm border border-blue-600 text-sm font-medium text-white hover:bg-blue-600 transition-colors font-body min-h-[44px] flex items-center space-x-2"
+                  onClick={handleTelegramClick}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121L7.026 13.15l-2.91-.918c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                  </svg>
+                  <span>Newsletter</span>
+                </motion.button>
+              )}
 
               {/* Navigation Tabs - Desktop */}
               <nav className="flex items-center space-x-1 bg-white/60 backdrop-blur-sm p-1 border border-gray-500">
@@ -194,6 +232,20 @@ export default function Navbar({ activeTab = "Social Board", onTabChange }: Navb
                   >
                     Wall
                   </motion.button>
+
+                  {/* Telegram Button - Mobile */}
+                  {telegramLink && (
+                    <motion.button
+                      className="w-full px-4 py-3 bg-blue-500 rounded-xl text-left font-medium text-white hover:bg-blue-600 transition-colors font-body flex items-center space-x-2"
+                      onClick={handleTelegramClick}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121L7.026 13.15l-2.91-.918c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                      </svg>
+                      <span>Newsletter</span>
+                    </motion.button>
+                  )}
 
                   {/* Navigation Tabs */}
                   <div className="space-y-2">
