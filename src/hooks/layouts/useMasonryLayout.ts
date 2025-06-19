@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 
 export interface MasonryItem {
   id: string
@@ -18,10 +18,8 @@ interface UseMasonryLayoutOptions {
 // Hook to get responsive column count
 function useResponsiveColumns() {
   const [isMounted, setIsMounted] = useState(false)
-  const [columnCount, setColumnCount] = useState(() => {
-    // Default to 1 column for SSR (mobile-first approach)
-    return 1
-  })
+  const [isReady, setIsReady] = useState(false)
+  const [columnCount, setColumnCount] = useState(1) // Always start with 1 for SSR safety
 
   useEffect(() => {
     // Mark as mounted and calculate initial column count
@@ -48,14 +46,23 @@ function useResponsiveColumns() {
       console.log('📐 Column count update:', {
         width,
         newColumnCount,
-        breakpoint: width >= 960 ? '960+' : '<960'
+        breakpoint: width >= 960 ? '960+' : '<960',
+        isMounted
       })
       
       setColumnCount(newColumnCount)
+      
+      // Mark as ready after first calculation
+      if (!isReady) {
+        // Use requestAnimationFrame to ensure the DOM is ready
+        requestAnimationFrame(() => {
+          setIsReady(true)
+        })
+      }
     }
 
-    // Set initial value immediately after mount
-    const rafId = requestAnimationFrame(updateColumnCount)
+    // Set initial value with a slight delay to ensure DOM is ready
+    const initialTimeout = setTimeout(updateColumnCount, 50)
 
     // Listen for resize events with debouncing
     let timeoutId: NodeJS.Timeout
@@ -68,18 +75,23 @@ function useResponsiveColumns() {
     return () => {
       window.removeEventListener('resize', debouncedUpdate)
       clearTimeout(timeoutId)
-      cancelAnimationFrame(rafId)
+      clearTimeout(initialTimeout)
     }
-  }, [])
+  }, [isReady])
 
   // Return SSR-safe column count
-  return isMounted ? columnCount : 1
+  return { 
+    columnCount: isMounted ? columnCount : 1, 
+    isMounted,
+    isReady: isMounted && isReady
+  }
 }
 
 // Main masonry layout hook with stable positioning
 export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
-  const columnCount = useResponsiveColumns()
+  const { columnCount, isMounted, isReady } = useResponsiveColumns()
   const [isInitialized, setIsInitialized] = useState(false)
+  const [layoutVersion, setLayoutVersion] = useState(0)
   
   // Keep track of previously processed items to maintain stability
   const previousItemsRef = useRef<MasonryItem[]>([])
@@ -87,36 +99,84 @@ export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
   const previousColumnHeightsRef = useRef<number[]>([])
   const previousColumnCountRef = useRef<number>(columnCount)
 
-  // Initialize immediately when we have items and the responsive column count is ready
+  // Force re-layout function
+  const forceReLayout = useCallback(() => {
+    console.log('🔄 Forcing layout recalculation')
+    setLayoutVersion(prev => prev + 1)
+    setIsInitialized(false)
+    // Clear refs to force full redistribution
+    previousItemsRef.current = []
+    previousColumnsRef.current = []
+    previousColumnHeightsRef.current = []
+  }, [])
+
+  // Initialize only when we have items, component is mounted AND ready
   useEffect(() => {
-    if (items.length > 0 && columnCount > 0 && !isInitialized) {
-      setIsInitialized(true)
+    if (items.length > 0 && columnCount > 0 && isReady && !isInitialized) {
+      console.log('🎯 Initializing masonry layout:', {
+        itemsLength: items.length,
+        columnCount,
+        isMounted,
+        isReady,
+        layoutVersion
+      })
+      // Small delay to ensure everything is settled
+      const initTimeout = setTimeout(() => {
+        setIsInitialized(true)
+      }, 100)
+      
+      return () => clearTimeout(initTimeout)
     }
-  }, [items.length, columnCount, isInitialized])
+  }, [items.length, columnCount, isReady, isInitialized, layoutVersion])
+
+  // Reset initialization when items change significantly or column count changes
+  useEffect(() => {
+    const previousItems = previousItemsRef.current
+    const previousColumnCount = previousColumnCountRef.current
+    
+    const isDifferentItemSet = previousItems.length > 0 && items.length > 0 && 
+      !items.every((item, index) => previousItems[index]?.id === item.id)
+    
+    const columnCountChanged = previousColumnCount !== columnCount && previousColumnCount > 0
+    
+    if ((isDifferentItemSet || columnCountChanged) && isInitialized) {
+      console.log('🔄 Resetting masonry due to:', {
+        isDifferentItemSet,
+        columnCountChanged,
+        previousCount: previousColumnCount,
+        newCount: columnCount
+      })
+      forceReLayout()
+    }
+  }, [items, columnCount, isInitialized, forceReLayout])
 
   // Stable distribution that preserves existing layout
   const columns = useMemo(() => {
-    if (!items.length || columnCount <= 0) return []
+    // Don't calculate until we're properly initialized
+    if (!isInitialized || !isReady || !items.length || columnCount <= 0) {
+      console.log('⏳ Masonry not ready:', {
+        isInitialized,
+        isReady,
+        itemsLength: items.length,
+        columnCount,
+        layoutVersion
+      })
+      return []
+    }
 
     const previousItems = previousItemsRef.current
     const previousColumns = previousColumnsRef.current
     const previousColumnHeights = previousColumnHeightsRef.current
     const previousColumnCount = previousColumnCountRef.current
 
-    // Check if column count changed (responsive breakpoint change)
+    // Check conditions for redistribution
     const columnCountChanged = previousColumnCount !== columnCount
-    
-    // Check if this is a fresh mount (page refresh)
     const isFreshMount = previousItems.length === 0 && items.length > 0
-    
-    // Check if this is a completely different set of items (e.g., filter change)
     const isDifferentItemSet = previousItems.length > 0 && items.length > 0 && 
       !items.every((item, index) => previousItems[index]?.id === item.id)
-    
-    // Find new items that weren't in the previous render
     const newItems = items.slice(previousItems.length)
     
-    console.log('🔄 Masonry update:', {
+    console.log('🔄 Masonry calculation:', {
       totalItems: items.length,
       previousItems: previousItems.length,
       newItems: newItems.length,
@@ -124,25 +184,26 @@ export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
       columnCountChanged,
       isFreshMount,
       isDifferentItemSet,
-      isInitialized
+      layoutVersion
     })
 
     let cols: MasonryItem[][]
     let columnHeights: number[]
 
-    if (columnCountChanged || previousColumns.length === 0 || isFreshMount || isDifferentItemSet) {
-      // If column count changed, first render, fresh mount, or different item set, redistribute all items
+    if (columnCountChanged || previousColumns.length === 0 || isFreshMount || isDifferentItemSet || layoutVersion > 0) {
+      // Full redistribution
       console.log('🏗️ Full redistribution due to:', {
         columnCountChanged,
         firstRender: previousColumns.length === 0,
         isFreshMount,
-        isDifferentItemSet
+        isDifferentItemSet,
+        layoutVersionReset: layoutVersion > 0
       })
       
       cols = Array.from({ length: columnCount }, () => [])
       columnHeights = Array(columnCount).fill(0)
 
-      // Redistribute all items
+      // Redistribute all items with better height estimation
       items.forEach((item, index) => {
         const shortestColumnIndex = columnHeights.indexOf(Math.min(...columnHeights))
         cols[shortestColumnIndex].push(item)
@@ -153,7 +214,6 @@ export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
       // Preserve existing layout and only append new items
       console.log('📌 Preserving existing layout, appending new items')
       
-      // Start with previous columns and heights
       cols = previousColumns.map(col => [...col]) // Deep copy
       columnHeights = [...previousColumnHeights] // Copy heights
       
@@ -163,8 +223,15 @@ export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
         columnHeights.push(0)
       }
       while (cols.length > columnCount) {
-        cols.pop()
+        const removed = cols.pop()
         columnHeights.pop()
+        // Redistribute removed items
+        removed?.forEach(item => {
+          const shortestColumnIndex = columnHeights.indexOf(Math.min(...columnHeights))
+          cols[shortestColumnIndex].push(item)
+          const estimatedHeight = estimateItemHeight(item, 0)
+          columnHeights[shortestColumnIndex] += estimatedHeight
+        })
       }
 
       // Only distribute new items
@@ -186,7 +253,7 @@ export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
     const distribution = cols.map(col => col.length)
     const heightDifference = columnHeights.length > 0 ? Math.max(...columnHeights) - Math.min(...columnHeights) : 0
     
-    console.log('🏗️ Masonry distribution:', {
+    console.log('🏗️ Masonry distribution complete:', {
       totalItems: items.length,
       columnCount,
       distribution,
@@ -197,15 +264,27 @@ export function useMasonryLayout({ items }: UseMasonryLayoutOptions) {
     })
 
     return cols
-  }, [items, columnCount, isInitialized])
+  }, [items, columnCount, isInitialized, isReady, layoutVersion])
+
+  // Provide a callback to manually trigger redistribution (useful for Twitter embeds)
+  const redistributeLayout = useCallback(() => {
+    if (isInitialized && isReady) {
+      console.log('🔧 Manual layout redistribution triggered')
+      forceReLayout()
+    }
+  }, [isInitialized, isReady, forceReLayout])
 
   return {
     columns,
     columnCount,
     totalItems: items.length,
-    isInitialized,
+    isInitialized: isInitialized && isReady,
+    isMounted,
+    isReady,
     isBalanced: columns.length > 0 && 
-      Math.max(...columns.map(col => col.length)) - Math.min(...columns.map(col => col.length)) <= 1
+      Math.max(...columns.map(col => col.length)) - Math.min(...columns.map(col => col.length)) <= 1,
+    redistributeLayout,
+    forceReLayout
   }
 }
 

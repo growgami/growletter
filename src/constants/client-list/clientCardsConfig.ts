@@ -25,10 +25,6 @@ export const clientCardsConfig: ClientCardConfig = {
   
   // Disabled clients (grayed out and non-clickable)
   disabledClients: [
-    "Plasma",
-    "USDT0", 
-    "Tether",
-    "Arbitrum",
   ]
 };
 

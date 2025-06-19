@@ -15,6 +15,13 @@ import { type Tweet } from "@/lib/api/tweets";
 declare global {
   interface Window {
     twttrLoaded?: boolean;
+    twttr?: {
+      ready: (callback: () => void) => void;
+      events: {
+        bind: (event: string, callback: () => void) => void;
+        unbind: (event: string, callback: () => void) => void;
+      };
+    };
   }
 }
 
@@ -117,7 +124,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
   const isFirstRenderRef = useRef(true);
 
   // Set up masonry layout
-  const { columns, columnCount, isInitialized } = useMasonryLayout({ 
+  const { columns, columnCount, isInitialized, isMounted, isReady, redistributeLayout, forceReLayout } = useMasonryLayout({ 
     items: tweets
   });
 
@@ -142,6 +149,43 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     isFirstRenderRef.current = false;
   }, [tweets.length]);
 
+  // Force layout recalculation when filter or search changes
+  useEffect(() => {
+    if (isReady && tweets.length > 0) {
+      console.log('🔄 Filter/search changed, forcing layout recalculation');
+      const timeout = setTimeout(() => {
+        forceReLayout();
+      }, 200);
+      return () => clearTimeout(timeout);
+    }
+  }, [selectedTag, searchQuery, forceReLayout, isReady]);
+
+  // Handle Twitter embed loading completion to redistribute layout if needed
+  useEffect(() => {
+    const handleTwitterLoaded = () => {
+      console.log('🐦 Twitter embeds loaded, checking if layout redistribution is needed');
+      // Small delay to ensure embeds are fully rendered
+      setTimeout(() => {
+        redistributeLayout();
+      }, 500);
+    };
+
+    // Listen for Twitter widget loading
+    if (typeof window !== 'undefined' && window.twttr) {
+      window.twttr.ready(() => {
+        window.twttr.events.bind('rendered', handleTwitterLoaded);
+      });
+    }
+
+    return () => {
+      if (typeof window !== 'undefined' && window.twttr) {
+        window.twttr.ready(() => {
+          window.twttr.events.unbind('rendered', handleTwitterLoaded);
+        });
+      }
+    };
+  }, [redistributeLayout]);
+
   console.log('📋 TweetBoard component rendered with clientId:', clientId);
   console.log('📊 Tweets state:', { 
     selectedTag,
@@ -155,6 +199,8 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     isReachingEnd,
     columnCount,
     isInitialized,
+    isMounted,
+    isReady,
     columnsDistribution: columns.map(col => col.length),
     // Debug: first few tweet IDs to see if filtering is working
     firstFewTweetIds: tweets.slice(0, 3).map(t => ({ id: t.id, tag: (t as unknown as { tag: string }).tag })),
@@ -174,28 +220,15 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     if (article.embedUrl) {
       return (
         <div className="w-full">
-          {article.embedType === 'video' ? (
-            <div className="aspect-video">
-              <iframe
-                src={article.embedUrl}
-                title={article.title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          ) : article.embedType === 'twitter' ? (
+          {article.embedType === 'twitter' ? (
             <div className="shadow-[0_0_0.5px_1px_gray] rounded-xl my-2">
-              <TwitterEmbed url={article.embedUrl} columnCount={columnCount} />
-            </div>
-          ) : article.embedType === 'iframe' ? (
-            <div className="aspect-auto">
-              <iframe
-                src={article.embedUrl}
-                title={article.title}
-                className="w-full border-0"
-                loading="lazy"
-                style={{ minHeight: '300px' }}
+              <TwitterEmbed 
+                url={article.embedUrl} 
+                columnCount={columnCount}
+                onLoad={() => {
+                  // Individual embed load handler - could be used for more granular control
+                  console.log('🐦 Individual Twitter embed loaded:', article.id);
+                }}
               />
             </div>
           ) : article.embedType === 'image' ? (
@@ -208,11 +241,20 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
+                onLoad={() => {
+                  console.log('🖼️ Image loaded:', article.id);
+                }}
               />
             </div>
           ) : (
             <div className="shadow-[0_0_0.5px_1px_gray] my-2">
-              <TwitterEmbed url={article.embedUrl} columnCount={columnCount} />
+              <TwitterEmbed 
+                url={article.embedUrl} 
+                columnCount={columnCount}
+                onLoad={() => {
+                  console.log('🔗 Embed loaded:', article.id);
+                }}
+              />
             </div>
           )}
         </div>
@@ -230,6 +272,9 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
+            onLoad={() => {
+              console.log('🖼️ Banner loaded:', article.id);
+            }}
           />
         </div>
       );
@@ -243,8 +288,8 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
 
   // Render content based on state
   const renderTweetContent = () => {
-    // Initial loading state
-    if (isLoadingInitial) {
+    // Initial loading state - show until both mounted, ready and data loaded
+    if (isLoadingInitial || !isMounted || !isReady) {
       return (
         <motion.div
           className="px-4"
@@ -254,7 +299,9 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           <div className="flex justify-center items-center py-16">
             <div className="flex items-center space-x-3 text-gray-600">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span className="text-lg">Loading tweets...</span>
+              <span className="text-lg">
+                {!isMounted ? 'Initializing...' : !isReady ? 'Preparing layout...' : 'Loading tweets...'}
+              </span>
             </div>
           </div>
         </motion.div>
@@ -309,32 +356,36 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
       );
     }
 
-    // Main content with tweets - only render when we have tweets and layout is initialized
+    // Main content with tweets - comprehensive loading states
     return (
       <section id="tweet-board" className="px-4 w-full">
         <motion.div
-          key={selectedTag}
+          key={`${selectedTag}-${searchQuery}`} // Include searchQuery to trigger re-animation on search
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          {/* Masonry Grid Layout */}
+          {/* Show different states based on initialization progress */}
           {tweets.length > 0 && !isInitialized ? (
             <motion.div
               className="text-center py-8 text-gray-600"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="animate-pulse">Initializing layout...</div>
+              <div className="flex items-center justify-center space-x-3">
+                <div className="animate-pulse">Organizing layout...</div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              </div>
             </motion.div>
-          ) : tweets.length > 0 && isInitialized ? (
+          ) : tweets.length > 0 && isInitialized && columns.length > 0 ? (
             <motion.div
               className="flex gap-2"
               variants={containerVariants}
+              key={`masonry-${columnCount}`} // Re-trigger animation on column count change
             >
               {columns.map((columnTweets, columnIndex) => (
                 <motion.div
-                  key={columnIndex}
+                  key={`col-${columnIndex}-${columnCount}`} // Ensure proper key for column changes
                   className="flex-1 -space-y-4"
                   variants={columnVariants}
                 >
@@ -359,6 +410,17 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
                 </motion.div>
               ))}
             </motion.div>
+          ) : tweets.length > 0 ? (
+            <motion.div
+              className="text-center py-8 text-gray-600"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <div className="flex items-center justify-center space-x-3">
+                <div className="animate-pulse">Preparing layout...</div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              </div>
+            </motion.div>
           ) : null}
 
           {/* Loading more indicator */}
@@ -377,7 +439,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           )}
 
           {/* Infinite scroll trigger - invisible element */}
-          {hasMore && !isLoadingMore && (
+          {hasMore && !isLoadingMore && isInitialized && (
             <div 
               ref={triggerRef} 
               className="h-10 w-full"
@@ -386,7 +448,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           )}
 
           {/* End of content indicator */}
-          {isReachingEnd && tweets.length > 0 && (
+          {isReachingEnd && tweets.length > 0 && isInitialized && (
             <motion.div 
               className="text-center py-8 text-gray-500"
               initial={{ opacity: 0 }}
@@ -402,7 +464,7 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
           )}
 
           {/* Stats footer */}
-          {tweets.length > 0 && (
+          {tweets.length > 0 && isInitialized && (
             <motion.div 
               className="text-center mt-8 text-gray-500 text-sm space-y-2"
               initial={{ opacity: 0 }}

@@ -1,7 +1,7 @@
 "use client";
 
 import { Tweet } from "react-tweet";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 // Utility function to extract tweet ID from a Twitter/X URL
 function extractTweetId(url: string): string | null {
@@ -12,11 +12,20 @@ function extractTweetId(url: string): string | null {
 interface TwitterEmbedProps {
   url: string;
   columnCount?: number;
+  onLoad?: () => void;
 }
 
-export default function TwitterEmbed({ url, columnCount = 5 }: TwitterEmbedProps) {
+export default function TwitterEmbed({ url, columnCount = 5, onLoad }: TwitterEmbedProps) {
   const tweetId = extractTweetId(url);
   const [embedWidth, setEmbedWidth] = useState(350);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onLoadRef = useRef(onLoad);
+  
+  // Keep onLoad callback ref up to date
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  }, [onLoad]);
   
   useEffect(() => {
     const updateEmbedWidth = () => {
@@ -77,11 +86,54 @@ export default function TwitterEmbed({ url, columnCount = 5 }: TwitterEmbedProps
       clearTimeout(timeoutId);
     };
   }, [columnCount]);
+
+  // Monitor for tweet load completion
+  useEffect(() => {
+    if (!containerRef.current || isLoaded) return;
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          const tweetElement = containerRef.current?.querySelector('[data-tweet-id], .react-tweet-theme, .tweet');
+          if (tweetElement && !isLoaded) {
+            // Check if the tweet content is actually rendered
+            const hasContent = tweetElement.textContent && tweetElement.textContent.trim().length > 0;
+            if (hasContent) {
+              setIsLoaded(true);
+              // Call onLoad callback after a short delay to ensure rendering is complete
+              setTimeout(() => {
+                onLoadRef.current?.();
+              }, 100);
+            }
+          }
+        }
+      });
+    });
+
+    observer.observe(containerRef.current, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Fallback timeout in case MutationObserver doesn't catch the load
+    const fallbackTimeout = setTimeout(() => {
+      if (!isLoaded) {
+        setIsLoaded(true);
+        onLoadRef.current?.();
+      }
+    }, 3000);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimeout);
+    };
+  }, [tweetId, isLoaded]);
   
   if (!tweetId) return null;
   
   return (
     <div 
+      ref={containerRef}
       data-theme='light' 
       style={{ 
         maxWidth: embedWidth, 
