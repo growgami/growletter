@@ -76,27 +76,27 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ skipAnimation = false 
       .to(welcomeLineRef.current, {
         y: 0,
         opacity: 1,
-        duration: 1.2,
+        duration: 0.6,
         ease: "power2.out"
       })
-      // Typewriter effect for "Growgami" - slower
+      // Typewriter effect for "CreatorWall" - faster
       .to(growgamiSplit.chars, {
         opacity: 1,
-        duration: 0.1,
-        stagger: 0.15, // Slower typewriter effect
+        duration: 0.05,
+        stagger: 0.04, // Much faster typewriter effect
         ease: "none"
-      }, "+=0.3")
+      }, "+=0.1")
       // Slide up the subtitle line
       .to(subtitleRef.current, {
         y: 0,
         opacity: 1,
-        duration: 1.0,
+        duration: 0.5,
         ease: "power2.out"
-      }, "+=0.5")
+      }, "+=0.2")
       // Fade out the entire header
       .to(headerRef.current, {
         opacity: 0,
-        duration: 0.8,
+        duration: 0.4,
         ease: "power2.inOut",
         onComplete: () => {
           // Mark animation as played so subsequent navigations within the same
@@ -106,7 +106,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ skipAnimation = false 
           }
           setAnimationComplete(true);
         }
-      }, "+=1.0");
+      }, "+=0.3");
 
     // Cleanup function
     return () => {

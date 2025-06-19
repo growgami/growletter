@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { clients } from "../../../constants/client-list/clients";
-import { arrangeClients, isClientDisabled } from "../../../constants/client-list/clientCardsConfig";
+import { arrangeClients } from "../../../constants/client-list/clientCardsConfig";
 
 // Helper function to determine grid layout based on client count
 const getGridLayout = (count: number) => {
@@ -26,7 +26,7 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
   const arrangedClients = arrangeClients(clients);
   
   const gridLayout = getGridLayout(arrangedClients.length);
-  const [shouldReduceAnimations, setShouldReduceAnimations] = useState(false);
+  const [/*shouldReduceAnimations*/, setShouldReduceAnimations] = useState(false);
 
   useEffect(() => {
     // Check if header animation was skipped to adjust animation timing
@@ -46,9 +46,9 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
     visible: {
       opacity: 1,
       transition: {
-        duration: shouldReduceAnimations ? 0.3 : 0.8,
-        staggerChildren: shouldReduceAnimations ? 0.1 : 0.4,
-        delayChildren: shouldReduceAnimations ? 0 : 0.2,
+        duration: 0.15,
+        staggerChildren: 0.05,
+        delayChildren: 0,
         when: "beforeChildren"
       }
     }
@@ -57,15 +57,15 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
   const titleVariants = {
     hidden: { 
       opacity: 0, 
-      y: shouldReduceAnimations ? 20 : 50,
-      scale: shouldReduceAnimations ? 0.95 : 0.9
+      y: 20,
+      scale: 0.95
     },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
       transition: {
-        duration: shouldReduceAnimations ? 0.4 : 1.0,
+        duration: 0.2,
         ease: [0.6, -0.05, 0.01, 0.99]
       }
     }
@@ -74,28 +74,24 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
   const cardVariants = {
     hidden: { 
       opacity: 0, 
-      y: shouldReduceAnimations ? 40 : 80,
-      scale: shouldReduceAnimations ? 0.9 : 0.8
+      y: 30,
+      scale: 0.9
     },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
       transition: {
-        duration: shouldReduceAnimations ? 0.5 : 1.2,
+        duration: 0.25,
         ease: [0.6, -0.05, 0.01, 0.99],
         type: "spring",
-        stiffness: shouldReduceAnimations ? 150 : 100,
-        damping: shouldReduceAnimations ? 20 : 15
+        stiffness: 200,
+        damping: 25
       }
     }
   };
 
-  const handleCardClick = (clientId: number, clientTitle: string) => {
-    // Don't navigate if client is disabled
-    if (isClientDisabled(clientTitle)) {
-      return;
-    }
+  const handleCardClick = (clientId: number) => {
     router.push(`/social-board?client=${clientId}`);
   };
 
@@ -113,7 +109,7 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
           variants={titleVariants}
         >
           {/* Page Title */}
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gray-900 leading-tight select-none px-4">
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl text-gray-900 leading-tight select-none px-4">
             Plug Into the <span className="italic font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>Pulse</span> of Crypto
           </h1>
           
@@ -128,65 +124,46 @@ export default function ClientCards({ startAnimation = false }: ClientCardsProps
           variants={containerVariants}
         >
           {arrangedClients.map((client) => {
-            const isDisabled = isClientDisabled(client.title);
-            
             return (
               <motion.button
                 key={client.id}
-                className={`group relative flex flex-col items-center justify-center bg-gray-50 border border-gray-500 p-2 sm:p-8 focus:outline-none transition-all duration-300 min-h-[80px] sm:min-h-[140px] ${
-                  isDisabled 
-                    ? 'opacity-40 cursor-not-allowed' 
-                    : 'active:scale-95 hover:shadow-lg'
-                }`}
+                className="group relative flex flex-col items-center justify-center bg-gray-50 border border-gray-500 p-2 sm:p-8 focus:outline-none transition-all duration-300 min-h-[80px] sm:min-h-[140px] active:scale-95 hover:shadow-lg"
                 style={{
-                  boxShadow: isDisabled 
-                    ? '2px 2px 0px rgba(0, 0, 0, 0.1)' 
-                    : '4px 4px 0px rgba(0, 0, 0, 0.2)'
+                  boxShadow: '4px 4px 0px rgba(0, 0, 0, 0.2)'
                 }}
                 variants={cardVariants}
-                whileHover={isDisabled ? {} : { 
+                whileHover={{ 
                   scale: 1.02,
                   boxShadow: '6px 6px 0px rgba(0, 0, 0, 0.25)'
                 }}
-                whileTap={isDisabled ? {} : { 
+                whileTap={{ 
                   scale: 0.98,
                   boxShadow: '2px 2px 0px rgba(0, 0, 0, 0.15)'
                 }}
-                onClick={() => handleCardClick(client.id, client.title)}
-                disabled={isDisabled}
+                onClick={() => handleCardClick(client.id)}
               >
                 {/* Icon */}
                 <motion.div
-                  className={`flex items-center justify-center mb-1 sm:mb-4 transition-transform ${
-                    isDisabled ? '' : 'group-hover:scale-105'
-                  }`}
+                  className="flex items-center justify-center mb-1 sm:mb-4 transition-transform group-hover:scale-105"
                 >
                   <Image
                     src={client.icon}
                     alt={client.title}
                     width={40}
                     height={40}
-                    className={`w-6 h-6 sm:w-12 sm:h-12 ${isDisabled ? 'grayscale' : ''}`}
+                    className="w-6 h-6 sm:w-12 sm:h-12"
                   />
                 </motion.div>
                 
                 {/* Content */}
                 <div className="text-center">
-                  <h3 className={`font-semibold text-xs sm:text-lg font-body mb-0 sm:mb-2 transition-colors leading-tight ${
-                    isDisabled 
-                      ? 'text-gray-400' 
-                      : 'text-gray-900 group-hover:text-gray-700'
-                  }`}>
+                  <h3 className="font-semibold text-xs sm:text-lg font-body mb-0 sm:mb-2 transition-colors leading-tight text-gray-900 group-hover:text-gray-700">
                     {client.title}
                   </h3>
                 </div>
                   
                 {/* Arrow indicator */}
-                <div className={`absolute top-1 right-1 sm:top-4 sm:right-4 transition-opacity ${
-                  isDisabled 
-                    ? 'opacity-20' 
-                    : 'opacity-40 group-hover:opacity-70'
-                }`}>
+                <div className="absolute top-1 right-1 sm:top-4 sm:right-4 transition-opacity opacity-40 group-hover:opacity-70">
                   <svg 
                     className="w-3 h-3 sm:w-5 sm:h-5 text-gray-500" 
                     fill="none" 

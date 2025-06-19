@@ -6,7 +6,7 @@ import { useRef, useEffect, useState } from "react";
 import TwitterEmbed from "./TwitterEmbed";
 import FilterTabs from "./FilterTabs";
 import SearchField from "@/components/tweet-board/SearchField";
-import { useTweets } from "@/hooks/query/useTweetsQuery";
+import { useProgressiveTweets } from "@/hooks/query/useTweetsQuery";
 import { useInfiniteScroll } from "@/hooks/layouts/useInfiniteScroll";
 import { useMasonryLayout } from "@/hooks/layouts/useMasonryLayout";
 import { type Tweet } from "@/lib/api/tweets";
@@ -108,8 +108,9 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     fetchNextPage,
     hasMore,
     isFetchingNextPage,
-    totalTweets
-  } = useTweets(undefined, selectedTag === "All" ? undefined : selectedTag, clientId, searchQuery || undefined);
+    totalTweets,
+    _debug
+  } = useProgressiveTweets(selectedTag === "All" ? undefined : selectedTag, clientId, searchQuery || undefined);
 
   // Track previous tweet count to identify new items
   const previousTweetCountRef = useRef(0);
@@ -156,7 +157,9 @@ export default function TweetBoard({ clientId }: TweetBoardProps) {
     isInitialized,
     columnsDistribution: columns.map(col => col.length),
     // Debug: first few tweet IDs to see if filtering is working
-    firstFewTweetIds: tweets.slice(0, 3).map(t => ({ id: t.id, tag: (t as unknown as { tag: string }).tag }))
+    firstFewTweetIds: tweets.slice(0, 3).map(t => ({ id: t.id, tag: (t as unknown as { tag: string }).tag })),
+    // Progressive loading debug
+    progressiveDebug: _debug
   });
 
   const renderMedia = (article: Tweet) => {

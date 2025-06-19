@@ -34,25 +34,27 @@ export const clientCardsConfig: ClientCardConfig = {
 
 // Helper function to arrange clients based on config
 export const arrangeClients = (clients: Client[]): Client[] => {
-  const { displayOrder } = clientCardsConfig;
+  const { displayOrder, disabledClients } = clientCardsConfig;
   
   // Create a map for quick lookup
   const clientMap = new Map(clients.map(client => [client.title, client]));
   
-  // Arrange clients according to displayOrder
+  // Arrange clients according to displayOrder, excluding disabled ones
   const arrangedClients: Client[] = [];
   
-  // First, add clients in the specified order
+  // First, add clients in the specified order (but skip disabled ones)
   for (const title of displayOrder) {
     const client = clientMap.get(title);
-    if (client) {
+    if (client && !disabledClients.includes(title)) {
       arrangedClients.push(client);
       clientMap.delete(title); // Remove from map to avoid duplicates
     }
   }
   
-  // Then add any remaining clients that weren't in displayOrder
-  const remainingClients = Array.from(clientMap.values());
+  // Then add any remaining clients that weren't in displayOrder (and aren't disabled)
+  const remainingClients = Array.from(clientMap.values()).filter(
+    client => !disabledClients.includes(client.title)
+  );
   arrangedClients.push(...remainingClients);
   
   return arrangedClients;

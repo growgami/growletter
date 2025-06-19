@@ -4,13 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import ClientCards from "@/components/clients/sections/ClientCards";
 import Header from "@/components/clients/Header";
-import Hero from "@/components/clients/sections/Hero";
+// import Hero from "@/components/clients/sections/Hero";
 
 export default function PageContent() {
-  const [showClientCards, setShowClientCards] = useState(false);
+  const [showClientCards, setShowClientCards] = useState(true); // Show immediately
   const [skipAnimation, setSkipAnimation] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(false);
-  const [startClientCardsAnimation, setStartClientCardsAnimation] = useState(false);
+  const [showNavbar, /*setShowNavbar*/] = useState(true); // Show immediately
+  const [startClientCardsAnimation, setStartClientCardsAnimation] = useState(true); // Start immediately
   const navbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -100,10 +100,10 @@ export default function PageContent() {
     }
   }, [showNavbar, skipAnimation]);
 
-  const handleClientCardsBottomReached = (reached: boolean) => {
-    console.log('Client cards reached:', reached);
-    setShowNavbar(reached);
-  };
+  // const handleClientCardsBottomReached = (reached: boolean) => {
+  //   console.log('Client cards reached:', reached);
+  //   setShowNavbar(reached);
+  // };
 
   return (
     <div 
@@ -121,11 +121,11 @@ export default function PageContent() {
       <Header ref={navbarRef} skipAnimation={skipAnimation} showNavbar={showNavbar} />
 
       {/* Hero Section */}
-      <Hero onClientCardsBottomReached={handleClientCardsBottomReached} />
+      {/* <Hero onClientCardsBottomReached={handleClientCardsBottomReached} /> */}
 
       {/* Client Cards Section - Only render after header animation completes or immediately if skipping */}
       {showClientCards && (
-        <main id="client-cards" className="flex flex-1 flex-col items-center justify-start pt-12 sm:pt-16 md:pt-20 px-2 sm:px-4">
+        <main id="client-cards" className="flex flex-1 flex-col items-center justify-start px-2 sm:px-4">
           <ClientCards startAnimation={startClientCardsAnimation} />
         </main>
       )}
